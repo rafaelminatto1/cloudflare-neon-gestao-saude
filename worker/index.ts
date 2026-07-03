@@ -2,8 +2,13 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { extractText } from 'unpdf';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
+import * as schema from '../src/db/schema.js';
+import { eq, inArray } from 'drizzle-orm';
 
 type Bindings = {
+  DATABASE_URL: string;
   NEON_AUTH_BASE_URL: string;
   R2_BUCKET: R2Bucket;
   AI: any;
@@ -205,6 +210,232 @@ app.post('/api/rag-chat', async (c) => {
   } catch (err: any) {
     return c.json({ error: err.message }, 500);
   }
+});
+
+
+// --- CRUD Endpoints ---
+const getDb = (c: any) => {
+  const sql = neon(c.env.DATABASE_URL);
+  return drizzle(sql, { schema });
+};
+
+app.post('/api/save-exams', async (c) => {
+  try {
+    const { exams, userId } = await c.req.json();
+    if (!userId || !exams || !Array.isArray(exams)) return c.json({ error: 'Invalid payload' }, 400);
+    if (exams.length === 0) return c.json({ success: true, count: 0 });
+
+    const db = getDb(c);
+    const values = exams.map((exam: any) => ({
+      id: exam.id || generateId(),
+      userId,
+      dataExame: exam.dataExame,
+      categoria: exam.categoria,
+      nomeExame: exam.nomeExame,
+      resultado: exam.resultado,
+      unidade: exam.unidade,
+      valorReferencia: exam.valorReferencia,
+      interpretacao: exam.interpretacao,
+      medicoSolicitante: exam.medicoSolicitante,
+      arquivoOrigem: exam.arquivoOrigem,
+      pdfStoragePath: exam.pdfStoragePath,
+      observacoes: exam.observacoes,
+      especialidadeMedica: exam.especialidadeMedica,
+      grupoSistemico: exam.grupoSistemico,
+      tags: exam.tags,
+      impactoAutoimune: exam.impactoAutoimune,
+      isManualCategory: exam.isManualCategory,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
+    await db.insert(schema.medicalRecords).values(values);
+    return c.json({ success: true, count: values.length });
+  } catch (err: any) {
+    console.error('Error saving exams:', err);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.delete('/api/exams/:id', async (c) => {
+  try {
+    const db = getDb(c);
+    await db.delete(schema.medicalRecords).where(eq(schema.medicalRecords.id, c.req.param('id')));
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.put('/api/exams/:id', async (c) => {
+  try {
+    const updates = await c.req.json();
+    const db = getDb(c);
+    await db.update(schema.medicalRecords).set({ ...updates, updatedAt: new Date() }).where(eq(schema.medicalRecords.id, c.req.param('id')));
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/api/delete-exams-batch', async (c) => {
+  try {
+    const { examIds } = await c.req.json();
+    if (!examIds || !examIds.length) return c.json({ success: true });
+    const db = getDb(c);
+    await db.delete(schema.medicalRecords).where(inArray(schema.medicalRecords.id, examIds));
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/api/rename-source', async (c) => {
+  try {
+    const { newSourceName, examIds } = await c.req.json();
+    if (!examIds || !examIds.length) return c.json({ success: true });
+    const db = getDb(c);
+    await db.update(schema.medicalRecords).set({ arquivoOrigem: newSourceName }).where(inArray(schema.medicalRecords.id, examIds));
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/api/doctors', async (c) => {
+  try {
+    const { doctor, userId } = await c.req.json();
+    if (!userId || !doctor) return c.json({ error: 'Invalid payload' }, 400);
+    const db = getDb(c);
+    const values = {
+      id: doctor.id || generateId(),
+      userId,
+      name: doctor.name,
+      crm: doctor.crm,
+      uf: doctor.uf,
+      specialty: doctor.specialty,
+      createdAt: new Date(),
+    };
+    await db.insert(schema.doctors).values(values);
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.delete('/api/doctors/:id', async (c) => {
+  try {
+    const db = getDb(c);
+    await db.delete(schema.doctors).where(eq(schema.doctors.id, c.req.param('id')));
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/api/lookup-crm', async (c) => {
+  try {
+    const { crm, uf, doctorName } = await c.req.json();
+    if (!crm && !doctorName) return c.json({ error: "Você deve fornecer o CRM ou o nome do médico para busca." }, 400);
+
+    const prompt = `Faça uma busca ou análise lógica para validar/encontrar o CRM, Estado e Especialidade Médica do seguinte profissional de saúde no Brasil:
+- CRM Informado: "${crm || 'Não especificado'}"
+- UF Informada: "${uf || 'Não especificada'}"
+- Nome Informado: "${doctorName || 'Não especificado'}"
+
+Retorne APENAS um JSON estrito no formato: {"name": "Nome Oficial", "crm": "12345", "uf": "SP", "specialty": "Especialidade"}. 
+Seja extremamente preciso. Caso não encontre, infira a provável especialidade. Sem markdown, apenas o JSON.`;
+
+    const messages = [{ role: 'user', content: prompt }];
+    const aiResponse = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages, max_tokens: 500 });
+    const rawAiResponse = (aiResponse as { response: string }).response;
+
+    let parsed = { name: doctorName, crm: crm, uf: uf, specialty: 'Clínico Geral' };
+    try {
+      const match = rawAiResponse.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else parsed = JSON.parse(rawAiResponse);
+    } catch (e) {
+      console.error("AI JSON parse error on CRM lookup:", rawAiResponse);
+    }
+
+    return c.json({ success: true, data: parsed });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/api/appointments', async (c) => {
+  try {
+    const { appointment, userId } = await c.req.json();
+    const db = getDb(c);
+    await db.insert(schema.medicalAppointments).values({ ...appointment, id: appointment.id || generateId(), userId, createdAt: new Date() });
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+app.delete('/api/appointments/:id', async (c) => {
+  try { const db = getDb(c); await db.delete(schema.medicalAppointments).where(eq(schema.medicalAppointments.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/api/pathologies', async (c) => {
+  try {
+    const { pathology, userId } = await c.req.json();
+    const db = getDb(c);
+    await db.insert(schema.userPathologies).values({ ...pathology, id: pathology.id || generateId(), userId, createdAt: new Date() });
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+app.delete('/api/pathologies/:id', async (c) => {
+  try { const db = getDb(c); await db.delete(schema.userPathologies).where(eq(schema.userPathologies.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/api/medications', async (c) => {
+  try {
+    const { medication, userId } = await c.req.json();
+    const db = getDb(c);
+    await db.insert(schema.continuousMedications).values({ ...medication, id: medication.id || generateId(), userId, createdAt: new Date() });
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+app.delete('/api/medications/:id', async (c) => {
+  try { const db = getDb(c); await db.delete(schema.continuousMedications).where(eq(schema.continuousMedications.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/api/exam-orders', async (c) => {
+  try {
+    const { examOrder, userId } = await c.req.json();
+    const db = getDb(c);
+    await db.insert(schema.examOrders).values({ ...examOrder, id: examOrder.id || generateId(), userId, createdAt: new Date() });
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+app.delete('/api/exam-orders/:id', async (c) => {
+  try { const db = getDb(c); await db.delete(schema.examOrders).where(eq(schema.examOrders.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/api/timeline-events', async (c) => {
+  try {
+    const { event, userId } = await c.req.json();
+    const db = getDb(c);
+    await db.insert(schema.customTimelineEvents).values({ ...event, id: event.id || generateId(), userId, createdAt: new Date() });
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+app.delete('/api/timeline-events/:id', async (c) => {
+  try { const db = getDb(c); await db.delete(schema.customTimelineEvents).where(eq(schema.customTimelineEvents.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/api/all-data/:userId', async (c) => {
+  try {
+    const db = getDb(c);
+    const userId = c.req.param('userId');
+    const [
+      records, appointments, pathologies, medications, orders, events, docs
+    ] = await Promise.all([
+      db.select().from(schema.medicalRecords).where(eq(schema.medicalRecords.userId, userId)),
+      db.select().from(schema.medicalAppointments).where(eq(schema.medicalAppointments.userId, userId)),
+      db.select().from(schema.userPathologies).where(eq(schema.userPathologies.userId, userId)),
+      db.select().from(schema.continuousMedications).where(eq(schema.continuousMedications.userId, userId)),
+      db.select().from(schema.examOrders).where(eq(schema.examOrders.userId, userId)),
+      db.select().from(schema.customTimelineEvents).where(eq(schema.customTimelineEvents.userId, userId)),
+      db.select().from(schema.doctors).where(eq(schema.doctors.userId, userId)),
+    ]);
+    return c.json({
+      exams: records,
+      appointments,
+      pathologies,
+      medications,
+      examOrders: orders,
+      timelineEvents: events,
+      doctors: docs
+    });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 export default app;

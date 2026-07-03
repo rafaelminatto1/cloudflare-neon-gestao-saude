@@ -8012,25 +8012,33 @@ export function SourcesView({ initialFilter }: { initialFilter?: any }) {
 
   const handleDeleteSelected = async () => {
     if (!user) return;
-    if (selectedSourcesTarget.length === 0) return;
-    
-    const confirmDelete = window.confirm(`Tem certeza que deseja apagar ${selectedSourcesTarget.length} documento(s) e todos os exames extraídos deles?`);
+    const confirmDelete = window.confirm(`Tem certeza que deseja apagar ${selectedSourcesTarget.length} documentos selecionados e todos os seus exames?`);
     if (!confirmDelete) return;
 
     try {
       const examsToDelete = processedExams.filter(exam => selectedSourcesTarget.includes(exam.arquivoOrigem));
-      const examIds = examsToDelete.map(ex => ex.id).filter((id): id is string => !!id);
-      const pdfPaths = examsToDelete.map(ex => ex.pdfStoragePath);
-      
-      if (examIds.length > 0) {
+      let examIdsCount = 0;
+      if (examsToDelete.length > 0) {
+        const examIds = examsToDelete.map(ex => ex.id).filter((id): id is string => !!id);
+        const pdfPaths = examsToDelete.map(ex => ex.pdfStoragePath);
+        examIdsCount = examIds.length;
+        
         await deleteExamsBatch(examIds, pdfPaths, user.uid);
       }
       
-      addToast(`${selectedSourcesTarget.length} documento(s) e ${examIds.length} exames apagados.`, 'success');
-      setSelectedSourcesTarget([]);
+      addToast(`${selectedSourcesTarget.length} documentos e ${examIdsCount} exames apagados.`, 'success');
+      
+      // Update processing history too
+      setProcessingHistory(prev => {
+        const newList = prev.filter(item => !selectedSourcesTarget.includes(item.fullName));
+        try { localStorage.setItem('processing_history_last_10', JSON.stringify(newList)); } catch (_) {}
+        return newList;
+      });
+
       if (selectedSource && selectedSourcesTarget.includes(selectedSource)) {
         setSelectedSource(null);
       }
+      setSelectedSourcesTarget([]);
     } catch (err) {
       console.error(err);
       addToast('Erro ao apagar documentos.', 'error');
@@ -8058,8 +8066,19 @@ export function SourcesView({ initialFilter }: { initialFilter?: any }) {
       } catch (err) {
         console.error(err);
         addToast('Erro ao apagar o documento e os exames.', 'error');
+        return;
       }
+    } else {
+       addToast(`Documento apagado.`, 'success');
+       if (selectedSource === sourceName) setSelectedSource(null);
     }
+    
+    // Remove from processing history too
+    setProcessingHistory(prev => {
+      const newList = prev.filter(item => item.fullName !== sourceName);
+      try { localStorage.setItem('processing_history_last_10', JSON.stringify(newList)); } catch (_) {}
+      return newList;
+    });
   };
 
   const [editingSource, setEditingSource] = useState<string | null>(null);
@@ -8135,6 +8154,8 @@ export function SourcesView({ initialFilter }: { initialFilter?: any }) {
             addToast('Erro ao apagar o documento e os exames.', 'error');
             return; // abort removal from history on error
           }
+        } else {
+          addToast(`Registro de histórico apagado.`, 'success');
         }
       }
     } else {
