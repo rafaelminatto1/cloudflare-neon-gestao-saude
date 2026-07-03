@@ -1,0 +1,6 @@
+import { GoogleGenAI } from "@google/genai";
+async function run() {
+  const ai = new GoogleGenAI({ apiKey: "none" });
+  console.log(typeof ai.models.generateContent);
+}
+run();
