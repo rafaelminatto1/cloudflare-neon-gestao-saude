@@ -540,7 +540,7 @@ export function MedicationsView() {
               layout="position"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`bg-white border rounded-3xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group ${
+              className={`card-interactive flex flex-col justify-between overflow-hidden group ${
                 med.isActive ? 'border-slate-200 hover:border-teal-100' : 'border-slate-200/50 hover:border-slate-300 opacity-80 hover:opacity-100'
               }`}
             >
@@ -729,7 +729,7 @@ export function MedicationsView() {
             <button
               onClick={importPresetMedications}
               disabled={isImportingPreset}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-bold rounded-xl transition-all border border-slate-200 flex items-center gap-1.5"
+              className="btn-secondary px-4 py-2 text-xs gap-1.5"
             >
               {isImportingPreset ? (
                 <>Importando...</>
@@ -744,7 +744,7 @@ export function MedicationsView() {
 
           <button
             onClick={handleOpenAddModal}
-            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs"
+            className="btn-secondary px-4 py-2.5 text-xs gap-1.5"
           >
             <Plus size={15} />
             Adicionar Medicamento
@@ -1070,7 +1070,7 @@ export function MedicationsView() {
                     <button
                       type="button"
                       onClick={() => setShowLogForm(!showLogForm)}
-                      className="px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 text-3xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1 cursor-pointer select-none"
+                      className="btn-secondary px-3 py-1.5 text-3xs gap-1 uppercase tracking-wider"
                     >
                       {showLogForm ? 'Fechar Cadastro' : 'Registrar Alteração'}
                     </button>
@@ -1164,7 +1164,7 @@ export function MedicationsView() {
                           <button
                             type="button"
                             onClick={handleSaveHistoricalLog}
-                            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-3xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1 cursor-pointer select-none"
+                            className="btn-primary px-4 py-2 text-3xs tracking-wider uppercase gap-1"
                           >
                             <CheckCircle2 size={12} />
                             {editingLogId ? 'Atualizar Ajuste' : 'Adicionar ao Histórico'}
@@ -1256,7 +1256,7 @@ export function MedicationsView() {
                 <button
                   onClick={handleSaveMedicationForm}
                   disabled={isSubmitting}
-                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="btn-primary px-5 py-2 text-xs gap-1.5"
                 >
                   <CheckCircle2 size={14} />
                   <span>{isSubmitting ? 'Salvando...' : 'Salvar Registro'}</span>

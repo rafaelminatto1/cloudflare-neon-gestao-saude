@@ -418,7 +418,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
         </div>
         <button 
           onClick={openAddModal}
-          className="print-hidden shrink-0 bg-slate-900 text-white hover:bg-slate-800 font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-sm transition-colors cursor-pointer text-sm"
+          className="print-hidden shrink-0 btn-secondary px-4 py-2.5 text-sm gap-2"
         >
           <Plus size={16} className="stroke-[2.5]" />
           Adicionar Patologia
@@ -440,7 +440,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
           type="button"
           disabled={isImportingPreset}
           onClick={importPresetPathologies}
-          className="print-hidden shrink-0 bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-40"
+          className="print-hidden shrink-0 btn-primary px-4 py-2.5 text-xs gap-1.5"
         >
           {isImportingPreset ? (
             <>
@@ -460,7 +460,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
 
       {/* Cards de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-5 rounded-2xl shadow-3xs border border-slate-200/60 flex items-center gap-4 hover:shadow-2xs transition-all">
+        <div className="card-base p-5 flex items-center gap-4">
           <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center border border-rose-100 shrink-0">
             <AlertCircle size={24} />
           </div>
@@ -470,7 +470,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
           </div>
         </div>
         
-        <div className="bg-white p-5 rounded-2xl shadow-3xs border border-slate-200/60 flex items-center gap-4 hover:shadow-2xs transition-all">
+        <div className="card-base p-5 flex items-center gap-4">
           <div className="w-12 h-12 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center border border-teal-100 shrink-0">
             <CheckCircle size={24} />
           </div>
@@ -480,7 +480,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-3xs border border-slate-200/60 flex items-center gap-4 hover:shadow-2xs transition-all">
+        <div className="card-base p-5 flex items-center gap-4">
           <div className="w-12 h-12 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center border border-slate-100 shrink-0">
             <HelpCircle size={24} />
           </div>
@@ -521,7 +521,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
       {filteredUserPathologies.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUserPathologies.map((p) => (
-            <div key={p.id} className={`bg-white rounded-2xl border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 hover:border-teal-100 transition-all duration-300 flex flex-col justify-between overflow-hidden relative group ${
+            <div key={p.id} className={`card-interactive flex flex-col justify-between overflow-hidden relative group ${
                 p.status === 'Ativo' ? 'status-border-active' :
                 p.status === 'Em Tratamento' ? 'status-border-treatment' :
                 p.status === 'Controlado' ? 'status-border-controlled' :
@@ -587,7 +587,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
       )}
 
       {/* Accordion de marcadores auto-extraídos de exames */}
-      <div className="border border-slate-200 rounded-2xl bg-white shadow-3xs overflow-hidden">
+      <div className="card-base overflow-hidden p-0">
         <button
           onClick={() => setShowExamMarkers(!showExamMarkers)}
           className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors text-left"
@@ -613,7 +613,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
             {pathologiesData.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {pathologiesData.map((item, idx) => (
-                  <div key={idx} className="bg-white rounded-xl border border-slate-250/50 p-4 flex flex-col md:flex-row gap-4 items-start shadow-3xs">
+                  <div key={idx} className="card-base p-4 flex flex-col md:flex-row gap-4 items-start">
                     <div className="md:w-1/3 shrink-0">
                       <div className="flex items-center gap-2">
                         <h5 className="font-bold text-slate-800 text-sm leading-snug">{item.condition}</h5>
@@ -740,7 +740,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                  className="btn-secondary px-4 py-2.5 text-xs gap-1"
                 >
                   {isSubmitting ? 'Salvando...' : 'Salvar Informações'}
                 </button>

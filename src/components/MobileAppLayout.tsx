@@ -426,10 +426,18 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
 
       {/* 3. DYNAMIC PAGES VIEW AREA */}
       <main className="flex-1 overflow-y-auto pb-20 relative bg-slate-50" id="mobile-main-scroll">
+        <AnimatePresence mode="wait">
         
         {/* TAB 1: INÍCIO (DASHBOARD) */}
         {mobileTab === 'inicio' && (
-          <div className="p-4 space-y-4 animate-in fade-in duration-300">
+          <motion.div 
+            key="inicio"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="p-4 space-y-4"
+          >
             {/* Welcome banner */}
             <div className="bg-slate-900 text-white rounded-3xl p-5 shadow-lg relative overflow-hidden">
               <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-10">
@@ -520,7 +528,7 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
             <div className="grid grid-cols-2 gap-2.5">
               <button 
                 onClick={() => window.location.hash = 'ia-doctor'}
-                className="w-full bg-teal-600 active:bg-teal-700 text-white rounded-2xl h-11 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm shadow-teal-600/10"
+                className="w-full btn-primary h-11 justify-center"
               >
                 <Sparkles size={14} />
                 <span>Consultar IA</span>
@@ -530,7 +538,7 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                   setCategoryFilter('Todas');
                   window.location.hash = 'exames';
                 }}
-                className="w-full bg-slate-900 active:bg-slate-800 text-white rounded-2xl h-11 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
+                className="w-full btn-secondary h-11 justify-center"
               >
                 <FileText size={14} />
                 <span>Ver Exames</span>
@@ -580,7 +588,7 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                     <div 
                       key={exam.id}
                       onClick={() => { if (exam.id) window.location.hash = 'exam-' + exam.id; }}
-                      className="bg-white p-3.5 border border-slate-201 active:bg-slate-100 rounded-2xl flex items-center justify-between gap-3 cursor-pointer transition-colors"
+                      className="card-interactive p-3.5 flex items-center justify-between gap-3"
                     >
                       <div className="overflow-hidden space-y-1">
                         <div className="flex items-center gap-1.5">
@@ -611,12 +619,19 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* TAB 2: EXAMES (LISTA DE EXAMES COM FILTROS) */}
         {mobileTab === 'exames' && (
-          <div className="p-4 space-y-4 animate-in fade-in duration-300">
+          <motion.div 
+            key="exames"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="p-4 space-y-4"
+          >
             <div>
               <h2 className="text-lg font-black text-slate-900 leading-none">Resultados Clínicos</h2>
               <p className="text-xs text-slate-400 mt-1">Navegue, pesquise e filtre de forma rápida.</p>
@@ -720,7 +735,7 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                   <div 
                     key={exam.id}
                     onClick={() => { if (exam.id) window.location.hash = 'exam-' + exam.id; }}
-                    className="bg-white p-3.5 border border-slate-201 hover:border-teal-200 active:bg-slate-50 rounded-2xl flex items-center justify-between gap-3 cursor-pointer transition-all shadow-3xs"
+                    className="card-interactive p-3.5 flex items-center justify-between gap-3"
                   >
                     <div className="overflow-hidden space-y-1">
                       <div className="flex items-center gap-1.5">
@@ -750,12 +765,19 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                 ))}
               </div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* TAB 3: EVOLUÇÃO (GRÁFICOS POLIDOS PARA MOBILE) */}
         {mobileTab === 'evolucao' && (
-          <div className="p-4 space-y-4 animate-in fade-in duration-300">
+          <motion.div 
+            key="evolucao"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="p-4 space-y-4"
+          >
             <div>
               <h2 className="text-lg font-black text-slate-900 leading-none">Tendências & Gráficos</h2>
               <p className="text-xs text-slate-400 mt-1 font-semibold">Selecione e acompanhe seu progresso ao longo do tempo.</p>
@@ -877,12 +899,19 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                 )}
               </div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* TAB 4: DOUTOR IA (FULL MESSAGING APP EXPERIENCE) */}
         {mobileTab === 'ia-doctor' && (
-          <div className="flex flex-col h-[calc(100vh-120px)] bg-slate-55 animate-in fade-in duration-300">
+          <motion.div 
+            key="ia-doctor"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="flex flex-col h-[calc(100vh-120px)] bg-slate-55"
+          >
             {/* Fake dynamic avatar chat header */}
             <div className="bg-gradient-to-r from-teal-700 via-teal-600 to-teal-700 text-white px-4 py-3 flex items-center justify-between shadow-md">
               <div className="flex items-center gap-2">
@@ -1009,12 +1038,19 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                 <Send size={14} />
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* TAB 5: MAIS (BENTO GRID REVOLUTION) */}
         {mobileTab === 'mais' && (
-          <div className="p-4 space-y-4 animate-in fade-in duration-300">
+          <motion.div 
+            key="mais"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="p-4 space-y-4"
+          >
             <div>
               <h2 className="text-lg font-black text-slate-900 leading-none">Todos os Recursos</h2>
               <p className="text-xs text-slate-400 mt-1">Acesse as ferramentas secundárias do HealthTracker.</p>
@@ -1040,7 +1076,7 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                 <button
                   key={tile.key}
                   onClick={() => window.location.hash = 'bento-' + tile.key}
-                  className={`p-4 rounded-3xl border text-left flex flex-col justify-between h-34 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)] active:scale-[0.97] cursor-pointer transition-all duration-300 group ${tile.color}`}
+                  className={`card-interactive p-4 text-left flex flex-col justify-between h-34 group ${tile.color}`}
                 >
                   <div className="p-2 bg-white rounded-2xl w-fit shadow-sm group-hover:scale-110 transition-transform duration-300">
                     {tile.icon}
@@ -1075,8 +1111,9 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                 <span className="font-mono font-bold text-teal-400">{allSources.length} PDFs</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </main>
 
       {/* 4. SPRING NATIVE BOTTOM SHEET COMPONENT (EXAM LAUDO DETAILS) */}
@@ -1186,7 +1223,7 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                       window.location.hash = 'ia-doctor';
                       handleSendChatMessage(query);
                     }}
-                    className="w-full bg-teal-600 active:bg-teal-700 text-white rounded-2xl h-12 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
+                    className="w-full btn-primary h-12 justify-center"
                   >
                     <Sparkles size={14} />
                     <span>Perguntar ao Doutor IA sobre este Exame</span>
@@ -1196,7 +1233,7 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                       setSelectedBiomarker(selectedExam.nomeExame);
                       window.location.hash = 'evolucao';
                     }}
-                    className="w-full bg-slate-900 active:bg-slate-800 text-white rounded-2xl h-12 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
+                    className="w-full btn-secondary h-12 justify-center mt-2"
                   >
                     <HeartPulse size={14} />
                     <span>Ver no Gráfico de Evolução</span>
