@@ -430,7 +430,9 @@ import {
   renameSourceInExams,
   CustomTimelineEvent,
   saveCustomTimelineEvent as dbSaveCustomTimelineEvent,
-  deleteCustomTimelineEvent as dbDeleteCustomTimelineEvent
+  deleteCustomTimelineEvent as dbDeleteCustomTimelineEvent,
+  fetchAllUserData,
+  dataEventTarget
 } from './db';
 const auth: any = {};
 
@@ -808,7 +810,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setHasDriveAccess(Boolean(token));
       setAuthReady(true);
       if (u) {
-        await createUserProfile();
+        await createUserProfile(u);
       }
     }, () => {
       setUser(null);
@@ -822,94 +824,39 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (!user) {
       setExams([]);
       setAppointments([]);
+      setUserPathologies([]);
+      setMedications([]);
+      setDoctors([]);
       setExamOrders([]);
+      setCustomEvents([]);
       return;
     }
-    const qExams = query(collection(db, `users/${user.uid}/exams`));
-    const unsubExams = onSnapshot(qExams, (snapshot: any) => {
-       const loadedExams: MedicalRecord[] = [];
-       snapshot.forEach((doc: any) => {
-         loadedExams.push({ id: doc.id, ...doc.data() } as MedicalRecord);
-       });
-       setExams(loadedExams);
-    }, (error: any) => {
-       handleFirestoreError(error, 'list' as any, `users/${user.uid}/exams`);
-    });
 
-    const qAppts = query(collection(db, `users/${user.uid}/appointments`));
-    const unsubAppts = onSnapshot(qAppts, (snapshot: any) => {
-       const loadedAppts: MedicalAppointment[] = [];
-       snapshot.forEach((doc: any) => {
-         loadedAppts.push({ id: doc.id, ...doc.data() } as MedicalAppointment);
-       });
-       setAppointments(loadedAppts);
-    }, (error: any) => {
-       handleFirestoreError(error, 'list' as any, `users/${user.uid}/appointments`);
-    });
+    let cancelled = false;
 
-    const qPathologies = query(collection(db, `users/${user.uid}/pathologies`));
-    const unsubPathologies = onSnapshot(qPathologies, (snapshot: any) => {
-       const loadedPathologies: UserPathology[] = [];
-       snapshot.forEach((doc: any) => {
-         loadedPathologies.push({ id: doc.id, ...doc.data() } as UserPathology);
-       });
-       setUserPathologies(loadedPathologies);
-    }, (error: any) => {
-       handleFirestoreError(error, 'list' as any, `users/${user.uid}/pathologies`);
-    });
+    const loadAllData = async () => {
+      try {
+        const data = await fetchAllUserData(user.uid);
+        if (cancelled) return;
 
-    const qMedications = query(collection(db, `users/${user.uid}/medications`));
-    const unsubMedications = onSnapshot(qMedications, (snapshot: any) => {
-       const loadedMedications: ContinuousMedication[] = [];
-       snapshot.forEach((doc: any) => {
-         loadedMedications.push({ id: doc.id, ...doc.data() } as ContinuousMedication);
-       });
-       setMedications(unifyMedicationList(loadedMedications));
-    }, (error: any) => {
-       handleFirestoreError(error, 'list' as any, `users/${user.uid}/medications`);
-    });
+        setExams(Array.isArray(data.exams) ? data.exams : []);
+        setAppointments(Array.isArray(data.appointments) ? data.appointments : []);
+        setUserPathologies(Array.isArray(data.pathologies) ? data.pathologies : []);
+        setMedications(unifyMedicationList(Array.isArray(data.medications) ? data.medications : []));
+        setDoctors(Array.isArray(data.doctors) ? data.doctors : []);
+        setExamOrders(Array.isArray(data.examOrders) ? data.examOrders : []);
+        setCustomEvents(Array.isArray(data.timelineEvents) ? data.timelineEvents : []);
+      } catch (error) {
+        console.error('Erro ao carregar dados do servidor:', error);
+      }
+    };
 
-    const qDoctors = query(collection(db, `users/${user.uid}/doctors`));
-    const unsubDoctors = onSnapshot(qDoctors, (snapshot: any) => {
-       const loadedDoctors: Doctor[] = [];
-       snapshot.forEach((doc: any) => {
-         loadedDoctors.push({ id: doc.id, ...doc.data() } as Doctor);
-       });
-       setDoctors(loadedDoctors);
-    }, (error: any) => {
-       handleFirestoreError(error, 'list' as any, `users/${user.uid}/doctors`);
-    });
-
-    const qExamOrders = query(collection(db, `users/${user.uid}/exam_orders`));
-    const unsubExamOrders = onSnapshot(qExamOrders, (snapshot: any) => {
-       const loadedOrders: ExamOrder[] = [];
-       snapshot.forEach((doc: any) => {
-         loadedOrders.push({ id: doc.id, ...doc.data() } as ExamOrder);
-       });
-       setExamOrders(loadedOrders);
-    }, (error: any) => {
-       handleFirestoreError(error, 'list' as any, `users/${user.uid}/exam_orders`);
-    });
-
-    const qCustomEvents = query(collection(db, `users/${user.uid}/customTimelineEvents`));
-    const unsubCustomEvents = onSnapshot(qCustomEvents, (snapshot: any) => {
-       const loadedCustomEvents: CustomTimelineEvent[] = [];
-       snapshot.forEach((doc: any) => {
-         loadedCustomEvents.push({ id: doc.id, ...doc.data() } as CustomTimelineEvent);
-       });
-       setCustomEvents(loadedCustomEvents);
-     }, (error: any) => {
-        handleFirestoreError(error, 'list' as any, `users/${user.uid}/customTimelineEvents`);
-     });
+    loadAllData();
+    dataEventTarget.addEventListener('refresh', loadAllData);
 
     return () => {
-      unsubExams();
-      unsubAppts();
-      unsubPathologies();
-      unsubMedications();
-      unsubDoctors();
-      unsubExamOrders();
-      unsubCustomEvents();
+      cancelled = true;
+      dataEventTarget.removeEventListener('refresh', loadAllData);
     };
   }, [user]);
 
@@ -8266,7 +8213,12 @@ export function SourcesView({ initialFilter }: { initialFilter?: any }) {
 
   const sourceExams = useMemo(() => {
     if (!selectedSource) return [];
-    return processedExams.filter(e => e.arquivoOrigem === selectedSource);
+    const selectedKey = normalizeString(selectedSource);
+    return processedExams.filter(e => 
+      e.arquivoOrigem === selectedSource ||
+      normalizeString(e.arquivoOrigem || '') === selectedKey ||
+      e.pdfStoragePath === selectedSource
+    );
   }, [selectedSource, processedExams]);
 
   const filteredSourceExams = useMemo(() => {
@@ -8442,6 +8394,14 @@ export function SourcesView({ initialFilter }: { initialFilter?: any }) {
   };
 
   const currentChats = selectedSource ? (chatHistory[selectedSource] || []) : [];
+
+  const resolveSourceName = React.useCallback((sourceName: string) => {
+    if (!sourceName) return sourceName;
+    const normalized = normalizeString(sourceName);
+    return allSources.find(source => source === sourceName)
+      || allSources.find(source => normalizeString(source || '') === normalized)
+      || sourceName;
+  }, [allSources]);
 
   if (isAddingDocument) {
     return (
@@ -8726,7 +8686,7 @@ export function SourcesView({ initialFilter }: { initialFilter?: any }) {
                   {processingHistory.map((item) => {
                     const speed = item.durationSec > 0 ? ((item.sizeMb * 1024) / item.durationSec).toFixed(1) : '0';
                     return (
-                      <tr key={item.id} className="hover:bg-slate-50/50 transition-colors font-medium group cursor-pointer" onClick={() => { if (item.fullName) setSelectedSource(item.fullName); }}>
+                      <tr key={item.id} className="hover:bg-slate-50/50 transition-colors font-medium group cursor-pointer" onClick={() => { if (item.fullName) setSelectedSource(resolveSourceName(item.fullName)); }}>
                         <td className="px-4 py-2.5 font-bold text-slate-700 truncate max-w-[200px]" title={item.fullName}>
                           {editingSource === item.fullName ? (
                               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>

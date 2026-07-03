@@ -24,6 +24,12 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
   return fetch(url, { ...options, headers });
 }
 
+async function assertOk(response: Response, fallbackMessage: string) {
+  if (response.ok) return;
+  const errData = await response.json().catch(() => null);
+  throw new Error(errData?.error || `${fallbackMessage}: ${response.status}`);
+}
+
 export async function uploadPDF(file: File, userId: string): Promise<string> {
   const filePath = `local_users/${userId}/exams/${Date.now()}_${file.name}`;
   try {
@@ -62,10 +68,7 @@ export async function saveExamsBatch(
       body: JSON.stringify({ exams, userId }),
     });
 
-    if (!response.ok) {
-      const errData = await response.json().catch(() => null);
-      throw new Error(errData?.error || `Erro do servidor: ${response.status}`);
-    }
+    await assertOk(response, "Erro do servidor");
 
     triggerRefresh();
     if (onProgress) {
@@ -77,108 +80,135 @@ export async function saveExamsBatch(
 }
 
 export async function deleteExam(examId: string, pdfStoragePath: string | undefined, userId: string) {
-  await apiFetch(`/api/exams/${examId}`, { method: "DELETE" });
+  const response = await apiFetch(`/api/exams/${examId}`, { method: "DELETE" });
+  await assertOk(response, "Erro ao apagar exame");
   triggerRefresh();
 }
 
 export async function renameSourceInExams(newSourceName: string, examIds: string[], userId: string) {
-  await apiFetch("/api/rename-source", {
+  const response = await apiFetch("/api/rename-source", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ newSourceName, examIds }),
   });
+  await assertOk(response, "Erro ao renomear fonte");
   triggerRefresh();
 }
 
 export async function deleteExamsBatch(examIds: string[], pdfStoragePaths: (string | undefined)[], userId: string) {
-  await apiFetch("/api/delete-exams-batch", {
+  const response = await apiFetch("/api/delete-exams-batch", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ examIds }),
   });
+  await assertOk(response, "Erro ao apagar exames");
   triggerRefresh();
 }
 
 export async function updateExam(examId: string, updates: Partial<MedicalRecord>, userId: string) {
-  await apiFetch(`/api/exams/${examId}`, {
+  const response = await apiFetch(`/api/exams/${examId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
   });
+  await assertOk(response, "Erro ao atualizar exame");
   triggerRefresh();
 }
 
 export async function saveAppointment(appointment: Partial<MedicalAppointment>, userId: string) {
-  await apiFetch("/api/appointments", {
+  const response = await apiFetch("/api/appointments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ appointment, userId }),
   });
+  await assertOk(response, "Erro ao salvar compromisso");
   triggerRefresh();
 }
 
 export async function deleteAppointment(appointmentId: string, userId: string) {
-  await apiFetch(`/api/appointments/${appointmentId}`, { method: "DELETE" });
+  const response = await apiFetch(`/api/appointments/${appointmentId}`, { method: "DELETE" });
+  await assertOk(response, "Erro ao apagar compromisso");
   triggerRefresh();
 }
 
-export async function createUserProfile() {
-  // Not strictly needed in this quick neon setup if we just use Neon Auth and let records tie to UID
+export async function createUserProfile(user?: { uid?: string; id?: string; email?: string | null; displayName?: string | null; name?: string | null }) {
+  const userId = user?.uid || user?.id;
+  if (!userId) return;
+
+  const response = await apiFetch("/api/users/ensure", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+      email: user.email || undefined,
+      name: user.displayName || user.name || undefined,
+    }),
+  });
+
+  await assertOk(response, "Erro ao criar perfil");
 }
 
 export async function savePathology(pathology: Partial<UserPathology>, userId: string) {
-  await apiFetch("/api/pathologies", {
+  const response = await apiFetch("/api/pathologies", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ pathology, userId }),
   });
+  await assertOk(response, "Erro ao salvar patologia");
   triggerRefresh();
 }
 
 export async function deletePathology(pathologyId: string, userId: string) {
-  await apiFetch(`/api/pathologies/${pathologyId}`, { method: "DELETE" });
+  const response = await apiFetch(`/api/pathologies/${pathologyId}`, { method: "DELETE" });
+  await assertOk(response, "Erro ao apagar patologia");
   triggerRefresh();
 }
 
 export async function saveMedication(medication: Partial<ContinuousMedication>, userId: string) {
-  await apiFetch("/api/medications", {
+  const response = await apiFetch("/api/medications", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ medication, userId }),
   });
+  await assertOk(response, "Erro ao salvar medicamento");
   triggerRefresh();
 }
 
 export async function deleteMedication(medicationId: string, userId: string) {
-  await apiFetch(`/api/medications/${medicationId}`, { method: "DELETE" });
+  const response = await apiFetch(`/api/medications/${medicationId}`, { method: "DELETE" });
+  await assertOk(response, "Erro ao apagar medicamento");
   triggerRefresh();
 }
 
 export async function saveDoctor(doctor: Partial<Doctor>, userId: string) {
-  await apiFetch("/api/doctors", {
+  const response = await apiFetch("/api/doctors", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ doctor, userId }),
   });
+  await assertOk(response, "Erro ao salvar médico");
   triggerRefresh();
 }
 
 export async function deleteDoctor(doctorId: string, userId: string) {
-  await apiFetch(`/api/doctors/${doctorId}`, { method: "DELETE" });
+  const response = await apiFetch(`/api/doctors/${doctorId}`, { method: "DELETE" });
+  await assertOk(response, "Erro ao apagar médico");
   triggerRefresh();
 }
 
 export async function saveExamOrder(examOrder: Partial<ExamOrder>, userId: string) {
-  await apiFetch("/api/exam-orders", {
+  const response = await apiFetch("/api/exam-orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ examOrder, userId }),
   });
+  await assertOk(response, "Erro ao salvar pedido de exame");
   triggerRefresh();
 }
 
 export async function deleteExamOrder(orderId: string, pdfStoragePath: string | undefined, userId: string) {
-  await apiFetch(`/api/exam-orders/${orderId}`, { method: "DELETE" });
+  const response = await apiFetch(`/api/exam-orders/${orderId}`, { method: "DELETE" });
+  await assertOk(response, "Erro ao apagar pedido de exame");
   triggerRefresh();
 }
 
@@ -193,16 +223,18 @@ export interface CustomTimelineEvent {
 }
 
 export async function saveCustomTimelineEvent(event: Partial<CustomTimelineEvent>, userId: string) {
-  await apiFetch("/api/timeline-events", {
+  const response = await apiFetch("/api/timeline-events", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ event, userId }),
   });
+  await assertOk(response, "Erro ao salvar evento");
   triggerRefresh();
 }
 
 export async function deleteCustomTimelineEvent(eventId: string, userId: string) {
-  await apiFetch(`/api/timeline-events/${eventId}`, { method: "DELETE" });
+  const response = await apiFetch(`/api/timeline-events/${eventId}`, { method: "DELETE" });
+  await assertOk(response, "Erro ao apagar evento");
   triggerRefresh();
 }
 

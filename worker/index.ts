@@ -5,7 +5,7 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '../src/db/schema.js';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 type Bindings = {
   DATABASE_URL: string;
@@ -60,7 +60,7 @@ app.post('/api/parse-pdf', async (c) => {
   try {
     const body = await c.req.parseBody();
     const file = body['file'] as File;
-    const userId = body['userId'] as string || c.get('userId');
+    const userId = getScopedUserId(c, body['userId'] as string | undefined);
     
     if (!file || !userId) return c.json({ error: 'Arquivo ou userId não fornecido' }, 400);
 
@@ -106,7 +106,11 @@ app.post('/api/parse-pdf', async (c) => {
       { role: 'user', content: `Extraia as informações do exame abaixo e retorne APENAS um JSON válido contendo um array 'exames' (se for sangue/urina/fezes/imagem) ou 'avaliacoes' (se for laudo/parecer). Formato do array exames: [{ dataExame: string, categoria: string, nomeExame: string, resultado: string, unidade: string, valorReferencia: string, interpretacao: string, medicoSolicitante: string, arquivoOrigem: string, especialidadeMedica: string, grupoSistemico: string, tags: string, impactoAutoimune: string }]. Se laudo: [{ date: string, type: string, text: string }].\n\nArquivo Origem Nome: ${file.name}\nTexto do PDF:\n${truncatedText}` }
     ];
 
-    const aiResponse = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 });
+    const aiResponse = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
+      gateway: {
+        id: "gestao-saude-gateway"
+      }
+    });
     const rawAiResponse = (aiResponse as { response: string }).response;
     
     // Parse JSON
@@ -200,6 +204,10 @@ app.post('/api/rag-chat', async (c) => {
          messages, 
          max_tokens: 4096, 
          stream: true 
+       }, {
+         gateway: {
+           id: "gestao-saude-gateway"
+         }
        }) as AsyncGenerator<any>;
        
        for await (const chunk of aiResponse) {
@@ -220,13 +228,42 @@ const getDb = (c: any) => {
   return drizzle(sql, { schema });
 };
 
+const getScopedUserId = (c: any, requestedUserId?: string) => {
+  const authUserId = c.get('userId');
+  if (authUserId && authUserId !== 'mock-user') return authUserId;
+  return requestedUserId || authUserId || 'mock-user';
+};
+
+const ensureUser = async (db: ReturnType<typeof getDb>, userId: string, email?: string, name?: string) => {
+  if (!userId) return;
+  await db.insert(schema.users).values({
+    id: userId,
+    email: email || `${userId}@local.healthtracker`,
+    name: name || null,
+    createdAt: new Date(),
+  }).onConflictDoNothing();
+};
+
+app.post('/api/users/ensure', async (c) => {
+  try {
+    const { userId: requestedUserId, email, name } = await c.req.json();
+    const userId = getScopedUserId(c, requestedUserId);
+    if (!userId) return c.json({ error: 'Invalid payload' }, 400);
+    const db = getDb(c);
+    await ensureUser(db, userId, email, name);
+    return c.json({ success: true });
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
 app.post('/api/save-exams', async (c) => {
   try {
-    const { exams, userId } = await c.req.json();
+    const { exams, userId: requestedUserId } = await c.req.json();
+    const userId = getScopedUserId(c, requestedUserId);
     if (!userId || !exams || !Array.isArray(exams)) return c.json({ error: 'Invalid payload' }, 400);
     if (exams.length === 0) return c.json({ success: true, count: 0 });
 
     const db = getDb(c);
+    await ensureUser(db, userId);
     const values = exams.map((exam: any) => ({
       id: exam.id || generateId(),
       userId,
@@ -261,7 +298,8 @@ app.post('/api/save-exams', async (c) => {
 app.delete('/api/exams/:id', async (c) => {
   try {
     const db = getDb(c);
-    await db.delete(schema.medicalRecords).where(eq(schema.medicalRecords.id, c.req.param('id')));
+    const userId = getScopedUserId(c);
+    await db.delete(schema.medicalRecords).where(and(eq(schema.medicalRecords.id, c.req.param('id')), eq(schema.medicalRecords.userId, userId)));
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -270,36 +308,42 @@ app.put('/api/exams/:id', async (c) => {
   try {
     const updates = await c.req.json();
     const db = getDb(c);
-    await db.update(schema.medicalRecords).set({ ...updates, updatedAt: new Date() }).where(eq(schema.medicalRecords.id, c.req.param('id')));
+    const userId = getScopedUserId(c, updates.userId);
+    const { userId: _ignoredUserId, ...safeUpdates } = updates;
+    await db.update(schema.medicalRecords).set({ ...safeUpdates, updatedAt: new Date() }).where(and(eq(schema.medicalRecords.id, c.req.param('id')), eq(schema.medicalRecords.userId, userId)));
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/delete-exams-batch', async (c) => {
   try {
-    const { examIds } = await c.req.json();
+    const { examIds, userId: requestedUserId } = await c.req.json();
     if (!examIds || !examIds.length) return c.json({ success: true });
     const db = getDb(c);
-    await db.delete(schema.medicalRecords).where(inArray(schema.medicalRecords.id, examIds));
+    const userId = getScopedUserId(c, requestedUserId);
+    await db.delete(schema.medicalRecords).where(and(inArray(schema.medicalRecords.id, examIds), eq(schema.medicalRecords.userId, userId)));
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/rename-source', async (c) => {
   try {
-    const { newSourceName, examIds } = await c.req.json();
+    const { newSourceName, examIds, userId: requestedUserId } = await c.req.json();
     if (!examIds || !examIds.length) return c.json({ success: true });
     const db = getDb(c);
-    await db.update(schema.medicalRecords).set({ arquivoOrigem: newSourceName }).where(inArray(schema.medicalRecords.id, examIds));
+    const userId = getScopedUserId(c, requestedUserId);
+    await db.update(schema.medicalRecords).set({ arquivoOrigem: newSourceName }).where(and(inArray(schema.medicalRecords.id, examIds), eq(schema.medicalRecords.userId, userId)));
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/doctors', async (c) => {
   try {
-    const { doctor, userId } = await c.req.json();
+    const { doctor, userId: requestedUserId } = await c.req.json();
+    const userId = getScopedUserId(c, requestedUserId);
     if (!userId || !doctor) return c.json({ error: 'Invalid payload' }, 400);
     const db = getDb(c);
+    await ensureUser(db, userId);
     const values = {
       id: doctor.id || generateId(),
       userId,
@@ -317,7 +361,8 @@ app.post('/api/doctors', async (c) => {
 app.delete('/api/doctors/:id', async (c) => {
   try {
     const db = getDb(c);
-    await db.delete(schema.doctors).where(eq(schema.doctors.id, c.req.param('id')));
+    const userId = getScopedUserId(c);
+    await db.delete(schema.doctors).where(and(eq(schema.doctors.id, c.req.param('id')), eq(schema.doctors.userId, userId)));
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -354,68 +399,79 @@ Seja extremamente preciso. Caso não encontre, infira a provável especialidade.
 
 app.post('/api/appointments', async (c) => {
   try {
-    const { appointment, userId } = await c.req.json();
+    const { appointment, userId: requestedUserId } = await c.req.json();
+    const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
+    await ensureUser(db, userId);
     await db.insert(schema.medicalAppointments).values({ ...appointment, id: appointment.id || generateId(), userId, createdAt: new Date() });
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/appointments/:id', async (c) => {
-  try { const db = getDb(c); await db.delete(schema.medicalAppointments).where(eq(schema.medicalAppointments.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.medicalAppointments).where(and(eq(schema.medicalAppointments.id, c.req.param('id')), eq(schema.medicalAppointments.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/pathologies', async (c) => {
   try {
-    const { pathology, userId } = await c.req.json();
+    const { pathology, userId: requestedUserId } = await c.req.json();
+    const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
+    await ensureUser(db, userId);
     await db.insert(schema.userPathologies).values({ ...pathology, id: pathology.id || generateId(), userId, createdAt: new Date() });
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/pathologies/:id', async (c) => {
-  try { const db = getDb(c); await db.delete(schema.userPathologies).where(eq(schema.userPathologies.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.userPathologies).where(and(eq(schema.userPathologies.id, c.req.param('id')), eq(schema.userPathologies.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/medications', async (c) => {
   try {
-    const { medication, userId } = await c.req.json();
+    const { medication, userId: requestedUserId } = await c.req.json();
+    const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
+    await ensureUser(db, userId);
     await db.insert(schema.continuousMedications).values({ ...medication, id: medication.id || generateId(), userId, createdAt: new Date() });
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/medications/:id', async (c) => {
-  try { const db = getDb(c); await db.delete(schema.continuousMedications).where(eq(schema.continuousMedications.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.continuousMedications).where(and(eq(schema.continuousMedications.id, c.req.param('id')), eq(schema.continuousMedications.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/exam-orders', async (c) => {
   try {
-    const { examOrder, userId } = await c.req.json();
+    const { examOrder, userId: requestedUserId } = await c.req.json();
+    const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
+    await ensureUser(db, userId);
     await db.insert(schema.examOrders).values({ ...examOrder, id: examOrder.id || generateId(), userId, createdAt: new Date() });
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/exam-orders/:id', async (c) => {
-  try { const db = getDb(c); await db.delete(schema.examOrders).where(eq(schema.examOrders.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.examOrders).where(and(eq(schema.examOrders.id, c.req.param('id')), eq(schema.examOrders.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/timeline-events', async (c) => {
   try {
-    const { event, userId } = await c.req.json();
+    const { event, userId: requestedUserId } = await c.req.json();
+    const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
+    await ensureUser(db, userId);
     await db.insert(schema.customTimelineEvents).values({ ...event, id: event.id || generateId(), userId, createdAt: new Date() });
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/timeline-events/:id', async (c) => {
-  try { const db = getDb(c); await db.delete(schema.customTimelineEvents).where(eq(schema.customTimelineEvents.id, c.req.param('id'))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.customTimelineEvents).where(and(eq(schema.customTimelineEvents.id, c.req.param('id')), eq(schema.customTimelineEvents.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.get('/api/all-data/:userId', async (c) => {
   try {
     const db = getDb(c);
-    const userId = c.req.param('userId');
+    const requestedUserId = c.req.param('userId');
+    const userId = getScopedUserId(c, requestedUserId);
     const [
       records, appointments, pathologies, medications, orders, events, docs
     ] = await Promise.all([

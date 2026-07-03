@@ -57,8 +57,8 @@ import path from 'path';
   // Wait for AI processing
   console.log("Aguardando IA processar...");
   await page.waitForTimeout(30000); // 30s to allow Cloudflare AI to respond and Postgres to save
-  await page.screenshot({ path: 'prod_upload_test_3.webp' });
+  await page.screenshot({ path: 'prod_upload_test_3.png' });
 
-  console.log("Teste finalizado. Verifique as screenshots prod_upload_test_*.webp");
+  console.log("Teste finalizado. Verifique as screenshots prod_upload_test_*.png");
   await browser.close();
 })();
