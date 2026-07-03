@@ -51,6 +51,12 @@
 	 * databases, object storage, AI inference, real-time communication and more.
 	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
 	 */
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			"id": "80d5450c191d45b68da284c3bda78dc3"
+		}
+	],
 	/**
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables

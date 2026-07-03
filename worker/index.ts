@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { extractText } from 'unpdf';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from '../src/db/schema.js';
 import { eq, inArray } from 'drizzle-orm';
 
@@ -14,6 +14,7 @@ type Bindings = {
   AI: any;
   VECTOR_INDEX: VectorizeIndex;
   GESTAO_SAUDE_KV: KVNamespace;
+  HYPERDRIVE: Hyperdrive;
 };
 
 const app = new Hono<{ Bindings: Bindings, Variables: { userId: string } }>();
@@ -215,7 +216,7 @@ app.post('/api/rag-chat', async (c) => {
 
 // --- CRUD Endpoints ---
 const getDb = (c: any) => {
-  const sql = neon(c.env.DATABASE_URL);
+  const sql = postgres(c.env.HYPERDRIVE.connectionString);
   return drizzle(sql, { schema });
 };
 
