@@ -37,56 +37,56 @@ const COMMON_ABBREVIATIONS: AbbreviationItem[] = [
     nome: "Vitamina D (25-OH)", 
     canonicalName: "Vitamina D", 
     desc: "Hormônio essencial na modulação da resposta imune e saúde osteoarticular. Fundamental no manejo da Artrite Reumatóide, Lúpus e Hashimoto para controlar a cascata inflamatória Th1/Th2.",
-    categoria: "Imunologia e Autoimune" 
+    categoria: "Autoimunidade" 
   },
   { 
     sigla: "Cortisol", 
     nome: "Cortisol Basal", 
     canonicalName: "Cortisol", 
     desc: "Hormônio do estresse crônico. Seu esgotamento ou hiperativação exacerba sintomas de dor (Fibromialgia) e altera arquitetura do sono (Insônia crônica).",
-    categoria: "Neurologia e Sono" 
+    categoria: "Hormônios" 
   },
   { 
     sigla: "B12", 
     nome: "Vitamina B12 (Cianocobalamina)", 
     canonicalName: "Vitamina B12", 
     desc: "Neuroproteção direta. Deficiência pode causar séria neblina mental (brain fog), exacerbar a desatenção (TDAH) e agravar dores nevrálgicas refratárias da Fibromialgia.",
-    categoria: "Neurologia e Nutrição" 
+    categoria: "Nutrientes" 
   },
   { 
     sigla: "VHS", 
     nome: "Velocidade de Hemossedimentação", 
     canonicalName: "VHS", 
     desc: "Sinaliza níveis de atividade inflamatória inespecífica. Aumentado em crises sistêmicas de Artrite Reumatóide, Espondilite ou Lúpus.",
-    categoria: "Imunologia e Autoimune" 
+    categoria: "Autoimunidade" 
   },
   { 
     sigla: "FAN", 
     nome: "Fator Antinuclear", 
     canonicalName: "FAN (Fator Antinuclear)", 
     desc: "Principal marcador essencial no rastreamento e diagnóstico de doenças autoimunes, capaz de apontar a presença de anticorpos reagindo contra núcleos das próprias células.",
-    categoria: "Imunologia e Autoimune" 
+    categoria: "Autoimunidade" 
   },
   { 
     sigla: "Anti-TPO", 
     nome: "Anticorpo Antitireoperoxidase", 
     canonicalName: "Anti-TPO", 
     desc: "Detecta autoanticorpos contra enzimas da tireoide, principal indicador de Tireoidite de Hashimoto e flutuações tireoidianas imunológicas.",
-    categoria: "Imunologia e Autoimune" 
+    categoria: "Autoimunidade" 
   },
   { 
     sigla: "FR", 
     nome: "Fator Reumatoide", 
     canonicalName: "Fator Reumatoide (FR)", 
     desc: "Usado primariamente para diagnosticar Artrite Reumatoide crônica e distinguir lesões articulares inflamatórias de autoimunes.",
-    categoria: "Imunologia e Autoimune" 
+    categoria: "Autoimunidade" 
   },
   { 
     sigla: "PCR", 
     nome: "Proteína C-Reativa", 
     canonicalName: "Proteína C-Reativa (PCR)", 
     desc: "Mede atividade inflamatória aguda ou infecção bacteriana no organismo.",
-    categoria: "Inflamação" 
+    categoria: "Autoimunidade" 
   },
   { 
     sigla: "TSH", 
@@ -100,7 +100,7 @@ const COMMON_ABBREVIATIONS: AbbreviationItem[] = [
     nome: "Hemoglobina Glicada", 
     canonicalName: "Hemoglobina Glicada (HbA1c)", 
     desc: "Mapeia a média do nível de açúcar no sangue dos últimos 90 dias (Diabetes).",
-    categoria: "Glicemia" 
+    categoria: "Metabolismo" 
   },
   { 
     sigla: "TGP / ALT", 
@@ -121,28 +121,28 @@ const COMMON_ABBREVIATIONS: AbbreviationItem[] = [
     nome: "Sorologia para Sífilis", 
     canonicalName: "VDRL (Sorologia para Sífilis)", 
     desc: "Rastreio e acompanhamento de tratamento para infecção por sífilis.",
-    categoria: "Sorologia" 
+    categoria: "Infectologia" 
   },
   { 
     sigla: "EAS", 
     nome: "Urina Tipo I", 
     canonicalName: "Urina Tipo I (EAS)", 
     desc: "Exame básico de urina. Avalia pH, densidade, hemácias e sinais de infecção.",
-    categoria: "Urinário" 
+    categoria: "Rins" 
   },
   { 
     sigla: "TAP / TP", 
     nome: "Tempo de Protrombina", 
     canonicalName: "Tempo de Protrombina (TP / TAP)", 
     desc: "Avalia a via de coagulação extrínseca. Crucial para quem usa Varfarina.",
-    categoria: "Coagulação" 
+    categoria: "Sangue" 
   },
   { 
     sigla: "TTPA", 
     nome: "Tempo de Tromboplastina", 
     canonicalName: "Tempo de Tromboplastina Parcial Ativada (TTPA)", 
     desc: "Detecção de distúrbios hemorrágicos e monitoramento de Heparina.",
-    categoria: "Coagulação" 
+    categoria: "Sangue" 
   },
   { 
     sigla: "DHEA-S", 
@@ -163,21 +163,21 @@ const COMMON_ABBREVIATIONS: AbbreviationItem[] = [
     nome: "Antígeno Prostático", 
     canonicalName: "PSA Total", 
     desc: "Rastreamento anual preventivo de alterações de próstata em homens.",
-    categoria: "Urologia" 
+    categoria: "Saúde Masculina" 
   },
   { 
     sigla: "HBsAg", 
     nome: "Hepatite B Superfície", 
     canonicalName: "HBsAg (Antígeno de Superfície do Vírus da Hepatite B)", 
     desc: "Confirma infecção ativa (aguda ou crônica) pelo vírus da Hepatite B.",
-    categoria: "Sorologia" 
+    categoria: "Infectologia" 
   },
   { 
     sigla: "EPF", 
     nome: "Parasitológico Fezes", 
     canonicalName: "Parasitológico de Fezes (EPF)", 
     desc: "Pesquisa direta de helmintos, protozoários, larvas e cistos em amostras.",
-    categoria: "Fezes" 
+    categoria: "Gastroenterologia" 
   },
   { 
     sigla: "Anti-TPO", 

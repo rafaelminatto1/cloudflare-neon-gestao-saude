@@ -14,7 +14,7 @@ export interface DictionaryItem {
 export const EXAM_GLOSSARY: DictionaryItem[] = [
   {
     canonicalName: "Hemograma Completo",
-    category: "Hematologia",
+    category: "Sangue",
     description: "Avalia as três linhagens de células do sangue fezendo a contagem de glóbulos vermelhos (hemácias), glóbulos brancos (leucócitos) e plaquetas. Primordial para diagnosticar anemia, processos infecciosos, quadros de leucemia e distúrbios de coagulação sanguínea.",
     mostCommonBrazil: true,
     aliases: ["hemograma", "hemograma completo", "eritrograma", "leucograma", "plaquetograma", "blood count", "cbc", "serie vermelha", "serie branca"],
@@ -35,7 +35,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Glicose em Jejum",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Mede o nível de glicose (açúcar) circulante no plasma sanguíneo após período de jejum. Usado para diagnosticar e controlar distúrbios glicêmicos como Pré-Diabetes e Diabetes Mellitus.",
     mostCommonBrazil: true,
     aliases: ["glicose", "glicemia", "glicose em jejum", "glicose serica", "glicemia em jejum", "glucose", "glicose de jejum"],
@@ -56,7 +56,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Hemoglobina Glicada (HbA1c)",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Reflete a média do controle glicêmico das hemácias nos últimos 2 a 3 meses. Essencial para acompanhamento de longo prazo e diagnóstico seguro do diabetes controle de glicose grudada na hemoglobina.",
     mostCommonBrazil: true,
     aliases: ["hemoglobina glicada", "hemoglobina glicosilada", "hba1c", "glicada", "a1c", "hb glicosilada", "hb glicada", "glicosilada"],
@@ -76,7 +76,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Insulina em Jejum",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Avalia a dosagem basal de insulina. É fundamental no cálculo dos índices de resistência insulínica (como o HOMA-IR e o HOMA-Beta), ajudando a detectar sobrecarga pancreática antes da elevação da glicose.",
     mostCommonBrazil: true,
     aliases: ["insulina", "insulina em jejum", "insulina basal", "insulinemia", "fasting insulin"],
@@ -95,7 +95,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Colesterol Total",
-    category: "Perfil Lipídico / Lipidograma",
+    category: "Coração",
     description: "Indica a soma de todas as subfrações de colesterol circulantes no soro sanguíneo (HDL + LDL + VLDL). Permite triagem rápida de hipercolesterolemia.",
     mostCommonBrazil: true,
     aliases: ["colesterol total", "colesterol", "dosagem de colesterol total", "total cholesterol"],
@@ -115,7 +115,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "HDL - Colesterol",
-    category: "Perfil Lipídico / Lipidograma",
+    category: "Coração",
     description: "Conhecido como 'colesterol bom'. Atua transportando o excesso de colesterol das artérias de volta para depósitos metabólicos no fígado, agindo de forma cardioprotetora.",
     mostCommonBrazil: true,
     aliases: ["hdl", "colesterol hdl", "hdl-colesterol", "hdl colesterol", "lipoproteina de alta densidade", "high-density lipoprotein"],
@@ -135,7 +135,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "LDL - Colesterol",
-    category: "Perfil Lipídico / Lipidograma",
+    category: "Coração",
     description: "Conhecido popularmente como 'colesterol ruim'. Subunidade de lipoproteína que em níveis em excesso deposita gordura nas paredes arteriais, estimulando placas ateroscleróticas.",
     mostCommonBrazil: true,
     aliases: ["ldl", "colesterol ldl", "ldl-colesterol", "ldl colesterol", "lipoproteina de baixa densidade", "low-density lipoprotein"],
@@ -154,7 +154,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "VLDL - Colesterol",
-    category: "Perfil Lipídico / Lipidograma",
+    category: "Coração",
     description: "Fração de colesterol de muito baixa densidade que transporta principalmente triglicérides produzidos endogenamente pelo fígado.",
     mostCommonBrazil: true,
     aliases: ["vldl", "colesterol vldl", "vldl-colesterol", "vldl colesterol", "very low-density lipoprotein"],
@@ -173,7 +173,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Triglicérides",
-    category: "Perfil Lipídico / Lipidograma",
+    category: "Coração",
     description: "Reserva lipídica primária do nosso organismo. Níveis altos no plasma favorecem o risco cardiovascular e podem levar a inflamações agudas no pâncreas (pancreatite) se passarem de limites seguros.",
     mostCommonBrazil: true,
     aliases: ["triglicerides", "triglicerideos", "triglicerides sericos", "triglycerides", "trigliceris"],
@@ -192,7 +192,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "TSH",
-    category: "Hormônios Tireoidianos",
+    category: "Tireoide",
     description: "Hormônio secretado pela glândula hipófise que atua estimulando o funcionamento da tireoide. É o exame de triagem mais sensível para detectar Hipotireoidismo ou Hipertireoidismo.",
     mostCommonBrazil: true,
     aliases: ["tsh", "tsh ultra-sensivel", "tsh ultrassensivel", "tsh ultra sensivel", "thyroid stimulating hormone", "hormonio estimulante da tireoide"],
@@ -212,7 +212,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Tiroxina (T4) Livre",
-    category: "Hormônios Tireoidianos",
+    category: "Tireoide",
     description: "Hormônio ativo sintetizado e liberado pela tireoide. Juntamente com o TSH, ajuda a traçar o diagnóstico e acompanhamento tático de condições endócrinas.",
     mostCommonBrazil: true,
     aliases: ["t4 livre", "tiroxina livre", "ft4", "free t4", "tiroxinemia livre"],
@@ -223,7 +223,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Triiodotironina (T3) Livre",
-    category: "Hormônios Tireoidianos",
+    category: "Tireoide",
     description: "Fração do hormônio T3 livre circulante, convertida principalmente a partir do T4. Usada para diagnosticar formas específicas de hipertireoidismo.",
     mostCommonBrazil: false,
     aliases: ["t3 livre", "triiodotironina livre", "ft3", "free t3", "triiodotironina livre serica"],
@@ -234,7 +234,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "TGP (ALT)",
-    category: "Função Hepática",
+    category: "Fígado",
     description: "Enzima presente predominantemente no fígado. Aumentos acentuados indicam lesão direta nas células do fígado (hepatites, cirrose, esteatose severa ou toxicologia medicamentosa).",
     mostCommonBrazil: true,
     aliases: ["tgp", "alt", "alanina aminotransferase", "transaminase glutamico piruvica", "transaminase tgp"],
@@ -253,7 +253,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "TGO (AST)",
-    category: "Função Hepática",
+    category: "Fígado",
     description: "Enzima presente em células do fígado, rins, coração e músculos. Sua elevação aponta danos celulares viscerais ou musculares agudos.",
     mostCommonBrazil: true,
     aliases: ["tgo", "ast", "aspartato aminotransferase", "transaminase glutamico oxalacetica", "transaminase tgo"],
@@ -272,7 +272,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Gama-Glutamil Transferase (Gama GT)",
-    category: "Função Hepática",
+    category: "Fígado",
     description: "Enzima do sistema de ductos biliares e fígado. Muito sensível aos efeitos inflamatórios por abuso alcoólico, drogas medicamentosas e quadros obstrutivos de vesícula biliar.",
     mostCommonBrazil: true,
     aliases: ["gama gt", "gama-gt", "ggt", "gama glutamil transferase", "gamagt"],
@@ -283,7 +283,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ureia",
-    category: "Função Renal/Urinário",
+    category: "Rins",
     description: "Composto sintetizado pelo fígado a partir do metabolismo proteico e excretado pelos rins. Auxilia na avaliação rápida do clearance e uremia clínica.",
     mostCommonBrazil: true,
     aliases: ["ureia", "ureia serica", "nitrogenio ureico"],
@@ -302,7 +302,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Creatinina",
-    category: "Função Renal/Urinário",
+    category: "Rins",
     description: "Resíduo metabólico gerado continuamente pelos músculos que é filtrado e eliminado quase exclusivamente pela urina. É o padrão de ouro inicial para calcular a Taxa de Filtração Glomerular renal.",
     mostCommonBrazil: true,
     aliases: ["creatinina", "creatinina serica", "creatinina de jejum"],
@@ -321,7 +321,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Microalbuminúria",
-    category: "Função Renal/Urinário",
+    category: "Rins",
     description: "Mede a excreção de quantidades microscópicas de albumina pela urina. É um indicador precoce de nefropatia e estresse glomerular, essencial no acompanhamento da Nefropatia por IgA e nefropatia diabética.",
     mostCommonBrazil: true,
     aliases: ["microalbuminuria", "micro albumina", "microalbuminuria isolada", "relação albumina creatinina", "rac", "albumina na urina"],
@@ -332,7 +332,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ácido Úrico",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Subproduto final da metabolização de purinas ricas em DNA na dieta alimentar. Níveis persistentemente altos levam a deposições de urato de sódio nas articulações (Gota) ou rins (Cálculos).",
     mostCommonBrazil: true,
     aliases: ["acido urico", "acido urico serico", "donate", "urate", "acido urico de jejum"],
@@ -343,7 +343,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Proteína C-Reativa (PCR)",
-    category: "Marcadores de Inflamação",
+    category: "Autoimunidade",
     description: "Proteína de fase aguda sintetizada de forma responsiva pelo fígado durante eventos de agressão inflamatórias ou infecções bacterianas. Versões ultrassensíveis apontam estimativas subclínicas vasculares.",
     mostCommonBrazil: true,
     aliases: ["pcr", "proteina c reativa", "pcr ultra-sensivel", "pcr ultrassensivel", "pcr de alta sensibilidade", "pcr-us"],
@@ -363,7 +363,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "VHS (Velocidade de Hemossedimentação)",
-    category: "Marcadores de Inflamação",
+    category: "Autoimunidade",
     description: "Exame reumatológico simples que indica a velocidade de queda das hemácias no tubo sob gravidade. Exibe comportamento elevado na vigência de processos inflamatórios de longa data.",
     mostCommonBrazil: true,
     aliases: ["vhs", "velocidade de hemossedimentacao", "velocidade de sedimentacao das hemacias"],
@@ -382,7 +382,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Vitamina D (25-hidróxi)",
-    category: "Vitaminas e Minerais",
+    category: "Nutrientes",
     description: "Formulação metabólica estável de armazenamento de Vitamina D que serve de estoque. Primordial para a regulação do balanço imunológico, calcificação óssea e mineralização celular.",
     mostCommonBrazil: true,
     aliases: ["vitamina d", "vitamina d (25-hidroxi)", "25-oh vitamina d", "25-oh-vitamina-d", "vitamina d3", "25-hidroxicolecalciferol", "vitamina d 250h"],
@@ -401,7 +401,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Vitamina B12",
-    category: "Vitaminas e Minerais",
+    category: "Nutrientes",
     description: "Importante cofator metabólico para a maturação eritrocitária e conservação da integridade da bainha de mielina em neurônios. Deficiências acusam cansaço sistêmico extremos ou anemias megaloblásticas.",
     mostCommonBrazil: true,
     aliases: ["vitamina b12", "vit b12", "cianocobalamina", "cobalamina", "b12"],
@@ -420,7 +420,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ácido Fólico (Vitamina B9)",
-    category: "Vitaminas e Minerais",
+    category: "Nutrientes",
     description: "Nutriente crucial para a síntese do DNA, maturação das hemácias e prevenção de defeitos do tubo neural. Níveis em queda podem acarretar anemia macrocítica e aumento da homocisteína.",
     mostCommonBrazil: false,
     aliases: ["acido folico", "folato", "vitamina b9", "folato serico"],
@@ -431,7 +431,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ferritina",
-    category: "Nutrição e Estoque de Ferro",
+    category: "Nutrientes",
     description: "Proteína que abriga o estoque fisiológico de Ferro intracelular. É o termômetro clínico mais fidedigno para confirmar carência latente de ferro (Microcitose / Anemia) ou sobrecarga sistêmica tóxica (Hemocromatose).",
     mostCommonBrazil: true,
     aliases: ["ferritina", "ferritina serica", "ferritin", "dosagem de ferritina"],
@@ -450,7 +450,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ferro Sérico",
-    category: "Nutrição e Estoque de Ferro",
+    category: "Nutrientes",
     description: "Mede o mineral Ferro presente de forma transitória ligada diretamente nas proteínas transportadoras no sangue periférico.",
     mostCommonBrazil: false,
     aliases: ["ferro serico", "ferro", "dosagem de ferro", "sideremia"],
@@ -460,7 +460,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Sódio",
-    category: "Eletrólitos & Minerais",
+    category: "Eletrólitos",
     description: "Principal cátion extracelular encarregado do controle osmótico fisiológico da pressão e regulação da hidratação celular corporal.",
     mostCommonBrazil: true,
     aliases: ["sodio", "sodio serico", "na serico", "na", "sodium"],
@@ -470,7 +470,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Potássio",
-    category: "Eletrólitos & Minerais",
+    category: "Eletrólitos",
     description: "Principal cátion intracelular responsável pelas dinâmicas rápidas de despolarizações neurais e contrações rítmicas do músculo do coração (miocárdio).",
     mostCommonBrazil: true,
     aliases: ["potassio", "potassio serico", "k serico", "k", "potassium"],
@@ -480,7 +480,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Cálcio Sérico",
-    category: "Eletrólitos & Minerais",
+    category: "Eletrólitos",
     description: "Mede a quantidade total de cálcio circulante. Um dos minerais mais abundantes e importantes do corpo, regulador de batimentos cardíacos, transmissão neuronal e contratilidade muscular.",
     mostCommonBrazil: true,
     aliases: ["calcio", "calcio serico", "calcio total", "ca"],
@@ -491,7 +491,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Cálcio Iônico",
-    category: "Eletrólitos & Minerais",
+    category: "Eletrólitos",
     description: "Mede a fração livre e metabolicamente ativa do cálcio, que não está unida a proteínas (como a albumina). É o indicador mais fidedigno de distúrbios de cálcio.",
     mostCommonBrazil: false,
     aliases: ["calcio ionico", "calcio livre", "ca ionico", "calcio ativo"],
@@ -502,7 +502,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Magnésio Sérico",
-    category: "Eletrólitos & Minerais",
+    category: "Eletrólitos",
     description: "Ativador enzimático fundamental em mais de 300 processos bioquímicos corporais, incluindo a contração das miofibrilas vasculares e estabilidade neuronal.",
     mostCommonBrazil: true,
     aliases: ["magnesio", "magnesio serico", "mg"],
@@ -512,7 +512,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Fósforo",
-    category: "Eletrólitos & Minerais",
+    category: "Eletrólitos",
     description: "Mineral que interage de forma oposta e conjugada com o cálcio. Fundamental no metabolismo ósseo e estritamente controlado pela função de purificação glomerular renal.",
     mostCommonBrazil: false,
     aliases: ["fosforo", "fosfato", "fosforoe", "p"],
@@ -522,7 +522,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Imunoglobulina A (IgA) Sérica",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Principal anticorpo de proteção presente nas secreções e mucosas. Sua flutuação é crucial para monitorar a atividade imunológica e disfunções de filtragem em portadores de Nefropatia por IgA.",
     mostCommonBrazil: true,
     aliases: ["iga", "imunoglobulina a", "iga serica", "iga total", "immunoglobulin a"],
@@ -533,7 +533,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Cortisol Sérico",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Conhecido como o hormônio adaptativo de sobrecarga e estresse, secretado pelas glândulas suprarrenais. Apresenta variação diurna (ritmo circadiano) com pico principal do dia pela manhã.",
     mostCommonBrazil: true,
     aliases: ["cortisol", "cortisol matinal", "cortisol 8h", "cortisol serico", "cortisol de jejum"],
@@ -544,7 +544,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Testosterona Total",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Principal hormônio esteroide androgênico. Fundamental no homem para regulação da espermatogênese e caracteres sexuais. Essencial em ambos os sexos para densidade mineral, força muscular e vigor físico.",
     mostCommonBrazil: true,
     aliases: ["testosterona", "testosterona total", "testosterona serica"],
@@ -555,7 +555,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Testosterona Livre",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Fração biologicamente ativa do hormônio que não se encontra ligada a proteínas carreadoras como a SHBG, sendo capaz de interagir de forma imediata com os receptores celulares de tecido.",
     mostCommonBrazil: false,
     aliases: ["testosterona livre", "testo livre", "free testosterone"],
@@ -566,7 +566,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Prolactina",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Hormônio secretado na glândula hipófise anterior. Estimula a lactação mamária, mas cansaço ou medicações antipsicóticas/ansiolíticas provocam hiperprolactinemia subclínica.",
     mostCommonBrazil: true,
     aliases: ["prolactina", "prl", "prolactina serica"],
@@ -577,7 +577,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "FSH (Hormônio Folículo-Estimulante)",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Glicoproteína hipofisária que ativa as funções gonadais. Nas mulheres estimula os folículos primordiais e nos homens regula a adequada maturação dos espermatozoides.",
     mostCommonBrazil: true,
     aliases: ["fsh", "hormonio foliculo estimulante", "fsh dosagem"],
@@ -587,7 +587,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "LH (Hormônio Luteinizante)",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Atua síncronamente ao FSH. Nas mulheres coordena a ovulação (pico de LH) e nos homens ativa as células linfoides de Leydig a sintetizar testosterona.",
     mostCommonBrazil: true,
     aliases: ["lh", "hormonio luteinizante", "lh dosagem"],
@@ -597,7 +597,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Homocisteína",
-    category: "Marcadores Cardiovasculares",
+    category: "Coração",
     description: "Aminoácido sulfurado decorrente do metabolismo da metionina. Níveis altos são fortemente irritantes da parede interna das artérias (endotélio) e atuam como preditor vascular independente.",
     mostCommonBrazil: false,
     aliases: ["homocisteina", "homocysteine"],
@@ -608,7 +608,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Lítio",
-    category: "Monitoramento Psiquiátrico e Terapêutico",
+    category: "Toxicologia",
     description: "Monitoramento obrigatório da concentração sérica do estabilizador de humor Carbonato de Lítio. Auxilia a manter o fármaco estritamente em sua janela terapêutica protetora e não nociva.",
     mostCommonBrazil: false,
     aliases: ["litio", "litio serico", "litemia", "lithium"],
@@ -619,7 +619,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "PSA Total",
-    category: "Hormônios e Saúde Masculina",
+    category: "Saúde Masculina",
     description: "Antígeno molecular produzido pelo parênquima da próstata. Permite monitorar e rastrear patologias prostáticas benignas ou oncológicas.",
     mostCommonBrazil: true,
     aliases: ["psa", "psa total", "prostate-specific antigen", "antigeno prostatico especifico"],
@@ -629,7 +629,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "CPK (Creatinoquinase)",
-    category: "Marcadores Musculares e Cardíacos",
+    category: "Coração",
     description: "Fração enzimática abundante em células de tecidos musculares esqueléticos e cardíacos. Sua elevação expressiva aponta lesões agudas musculares (Rabdomiólise) ou esforço vigoroso recente.",
     mostCommonBrazil: false,
     aliases: ["cpk", "ck", "creatinoquinase", "creatinofosfoquinase"],
@@ -649,7 +649,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Eritrócitos (Hemácias)",
-    category: "Hematologia",
+    category: "Sangue",
     description: "A contagem absoluta por milímetro cúbico de glóbulos vermelhos (hemácias) circulantes no corpo, responsáveis diretos pelo fluxo aeróbico dos pulmões aos tecidos.",
     mostCommonBrazil: true,
     aliases: ["eritreocitos", "eritrócitos", "hemacias", "red blood cells", "rbc", "hemácias"],
@@ -659,7 +659,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Hemoglobina",
-    category: "Hematologia",
+    category: "Sangue",
     description: "Proteína globular tetramérica com ferro contida no interior das hemácias. É o principal marcador laboratorial para confirmar anemias crônicas de fluxo ou hemorragias agudas.",
     mostCommonBrazil: true,
     aliases: ["hemoglobina", "hb", "hemoglobin"],
@@ -669,7 +669,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Hematócrito",
-    category: "Hematologia",
+    category: "Sangue",
     description: "Expressa em porcentagem do volume que a massa globular (hemácias) representa sobre o total do volume de amostra líquida centrifugada do sangue analisado.",
     mostCommonBrazil: true,
     aliases: ["hematocrito", "ht", "packed cell volume", "pcv"],
@@ -679,7 +679,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Leucócitos",
-    category: "Hematologia",
+    category: "Sangue",
     description: "Soma das frações de células de defesa imunológica circulantes (Neutrófilos, Linfócitos, Monócitos, Eosinófilos e Basófilos). Indica ativação ou resposta a infecções agudas.",
     mostCommonBrazil: true,
     aliases: ["leucocitos", "leucocito", "globulos brancos", "wbc", "leucograma"],
@@ -689,7 +689,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Plaquetas",
-    category: "Hematologia",
+    category: "Sangue",
     description: "Fragmentos citoplasmáticos celulares oriundos dos megacariócitos medulares, responsáveis diretos por desencadear a cascata de tamponamentos iniciais primários da coagulação sanguínea.",
     mostCommonBrazil: true,
     aliases: ["plaquetas", "plaquetograma", "platelets", "plq"],
@@ -699,7 +699,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Amilase",
-    category: "Marcadores Pancreáticos",
+    category: "Pâncreas",
     description: "Enzima secretada pelo pâncreas para fatiar moléculas complexas de amido. Seu aumento agudo em 3x aponta inflamação transitória imediata no pâncreas.",
     mostCommonBrazil: false,
     aliases: ["amilase", "amylase", "amilasemia"],
@@ -709,7 +709,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Lipase",
-    category: "Marcadores Pancreáticos",
+    category: "Pâncreas",
     description: "Enzima digestiva altamente específica do pâncreas para decomposição de triglicérides intestinais. Possui permanência elevada diagnóstica por período mais longo comparado à amilase.",
     mostCommonBrazil: false,
     aliases: ["lipase", "lipase serica", "lipasemia"],
@@ -719,7 +719,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "D-Dímero",
-    category: "Fatores de Hemostasia & Coagulação",
+    category: "Sangue",
     description: "Subproduto degradado da rede tridimensional insolúvel de fibrina de coágulos formados. Alta sensibilidade e valor preditivo negativo excelente para triar embolias pulmonares (TEP) ou tromboses venosas agudas (TVP).",
     mostCommonBrazil: false,
     aliases: ["d-dimero", "ddimero", "d dimero", "produtos de degradacao da fibrina", "pdf", "d-dimer"],
@@ -730,7 +730,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Estradiol",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Principal hormônio estrogênio produzido pelos ovários e, em menores quantidades, pelos testículos e glândulas adrenais. Essencial para o desenvolvimento dos caracteres sexuais femininos secundários, controle do ciclo menstrual, saúde óssea e integridade vascular.",
     mostCommonBrazil: true,
     aliases: ["estradiol", "estradiol serico", "e2", "17-beta estradiol", "dosagem de estradiol"],
@@ -741,7 +741,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Progesterona",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Hormônio esteroide envolvido no ciclo menstrual feminino, gravidez e embriogênese. Produzido principalmente pelo corpo lúteo no ovário. Crucial para preparar o endométrio para implantação do óvulo e manutenção da gestação.",
     mostCommonBrazil: true,
     aliases: ["progesterona", "progesterona serica", "prog", "dosagem de progesterona"],
@@ -752,7 +752,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "SHBG (Globulina Carreadora)",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Glicoproteína que se liga a hormônios sexuais, especificamente testosterona e estradiol, regulando suas frações livres (biologicamente ativas) na circulação sanguínea. Útil na investigação de distúrbios androgênicos na mulher (como SOP) e no cálculo da testosterona livre.",
     mostCommonBrazil: false,
     aliases: ["shbg", "globulina carreadora de hormonios sexuais", "globulina carreadora", "shbg serica"],
@@ -763,7 +763,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Urina Tipo I (EAS)",
-    category: "Função Renal/Urinário",
+    category: "Rins",
     description: "Exame básico de urina (Elementos Animais e Sedimentoscopia). Analisa aspectos físicos (cor, densidade, pH), químicos (presença de glicose, proteínas, corpos cetônicos, hemoglobina, nitritos e esterase leucocitária) e microscópicos (células epiteliais, leucócitos, hemácias, cristais e cilindros). Essencial na triagem de infecções urinárias e microhematúria glomerular (nefropatias).",
     mostCommonBrazil: true,
     aliases: ["urina tipo i", "eas", "exame de urina", "urina tipo 1", "sumario de urina", "elementos anormais e sedimentoscopia", "analise de urina"],
@@ -775,7 +775,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "HOMA-IR & HOMA-Beta",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Índices matemáticos calculados a partir da Glicose em Jejum e da Insulina em Jejum. O HOMA-IR estima o grau de resistência celular à ação da insulina, enquanto o HOMA-Beta estima a capacidade secretora das células beta do pâncreas.",
     mostCommonBrazil: true,
     aliases: ["homa ir", "homa-ir", "homa beta", "homa-beta", "indice homa", "calculo do indice homa io"],
@@ -786,7 +786,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Zinco Sérico",
-    category: "Vitaminas e Minerais",
+    category: "Nutrientes",
     description: "Dosagem de Zinco na circulação. O zinco é um mineral traço essencial, operando como cofator para mais de 100 enzimas metabólicas. Crucial para o sistema imunológico, cicatrização de tecidos, síntese de DNA e integridade da barreira intestinal.",
     mostCommonBrazil: false,
     aliases: ["zinco", "zinco serico", "zinc", "dosagem de zinco"],
@@ -797,7 +797,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Selênio Sérico",
-    category: "Vitaminas e Minerais",
+    category: "Nutrientes",
     description: "Exame que mede os níveis corporais de Selênio. Sendo um antioxidante biológico formidável, é um oligoelemento fundamental para a síntese e ótima ativação dos hormônios tireoidianos (através das desidogenases) e proteção contra estresse oxidativo.",
     mostCommonBrazil: false,
     aliases: ["selenio", "selenio serico", "selenium"],
@@ -807,7 +807,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Eletrocardiograma (ECG)",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Registro gráfico da atividade elétrica cardíaca durante o ciclo de contração. Permite diagnosticar arritmias, bloqueios de condução, hipertrofia de câmaras cardíacas e sobrecargas coronárias ou isquemias ativas.",
     mostCommonBrazil: true,
     aliases: ["ecg", "eletrocardiograma", "eletrocardiograma de repouso", "eletrocardiograma convencional"],
@@ -818,7 +818,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ultrassonografia de Abdome Total",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Exame não invasivo que utiliza ondas sonoras de alta frequência para obter imagens em tempo real de órgãos e estruturas intra-abdominais, como fígado, vesícula biliar, vias biliares, pâncreas, baço, rins, glândulas adrenais, aorta abdominal e bexiga. Fundamental na detecção de esteatose hepática (gordura no fígado), cálculos biliares, cistos renais ou esplenomegalia.",
     mostCommonBrazil: true,
     aliases: ["ultrassonografia de abdome total", "ultrassom abdome total", "usg abdome total", "us abdome total", "ultrassonografia abdominal"],
@@ -829,7 +829,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ultrassonografia de Tireoide",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Avalia a estrutura anatômica da glândula tireoide, permitindo medir suas dimensões totais, textura do parênquima, fluxo vascular (se associado ao Doppler) e, principalmente, caracterizar com precisão nódulos no pescoço (através da classificação TI-RADS) para avaliar risco de malignidade.",
     mostCommonBrazil: true,
     aliases: ["ultrassonografia de tireoide", "ultrassom tireoide", "usg tireoide", "us de tireoide", "ultrassonografia cervical"],
@@ -840,7 +840,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ecocardiograma Transtorácico",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Ultrassonografia do coração que avalia em tempo real o fluxo sanguíneo pelas válvulas, diâmetros das cavidades atriais e ventriculares, espessura miocárdica e, crucialmente, a Fração de Ejeção do Ventrículo Esquerdo (FEVE), essencial para diagnosticar insuficiência cardíaca e cardiopatias.",
     mostCommonBrazil: true,
     aliases: ["ecocardiograma", "ecocardiograma transtoracico", "eco", "ecocardiografia com doppler", "ecocardiograma bidimensional"],
@@ -851,7 +851,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ressonância Magnética do Crânio",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Método de imagem de alta definição baseado em campo magnético que provê excelente visualização do parênquima cerebral, cerebelo, tronco encefálico e vascularização intracraniana. Padrão de ouro para detectar lesões desmielinizantes, microangiopatia vascular, tumores, AVC isquêmico/hemorrágico e malformações anatômicas.",
     mostCommonBrazil: false,
     aliases: ["ressonancia do cranio", "rm de cranio", "ressonancia magnetica cerebral", "ressonancia de cranio", "rm de encefalo", "ressonancia do cerebro"],
@@ -862,7 +862,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Tomografia Computadorizada de Tórax",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Exame de raios-X fatiados de alta velocidade assistido por computador. Permite uma reconstrução tridimensional detalhada do pulmão, brônquios, mediastino, vasos da base do coração e gradil costal. Essencial para avaliar nódulos pulmonares, pneumonia severa, bronquiectasias e enfisema.",
     mostCommonBrazil: true,
     aliases: ["tomografia de torax", "tc de torax", "tomografia computadorizada do torax", "tc de pulmao", "tomografia de pulmao"],
@@ -873,7 +873,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Raio-X de Tórax",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Radiografia convencional rápida do tórax em incidências padrão (geralmente PA e Perfil). Método de triagem inicial excelente para estimar silhueta cardíaca (índice cardiotorácico), transparência pulmonar, presença de derrames pleurais (líquido nos pulmões) e consolidações alveolares.",
     mostCommonBrazil: true,
     aliases: ["raio x de torax", "rx de torax", "radiografia de torax", "raio-x do torax", "rx torax"],
@@ -884,7 +884,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Mamografia Digital",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Radiologia digital especializada de baixa dose para as mamas nas posições crânio-caudal e médio-lateral oblíqua (incidências básicas). Permite a detecção precoce de microcalcificações suspeitas, distorções arquiteturais e nódulos mamários ocultos antes de serem palpáveis, classificados pelo sistema internacional BI-RADS.",
     mostCommonBrazil: true,
     aliases: ["mamografia", "mamografia digital", "mamografia de alta resolucao", "mmg digital"],
@@ -895,7 +895,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Densitometria Óssea",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Analisa a quantidade de carga mineral de cálcio contida em pontos críticos de fratura (Coluna Lombar e Colo do Fêmur) usando raios de baixa energia (DEXA). Permite diagnosticar Osteopenia (-1.0 a -2.5 DP) ou Osteoporose (igual ou menor que -2.5 DP no T-Score).",
     mostCommonBrazil: true,
     aliases: ["densitometria ossea", "densitometria", "densitometria coluna e femur", "dexa", "densitometria de dupla energia"],
@@ -906,7 +906,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "USG de Carótidas e Vertebrais com Doppler",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Ultrassonografia cervical focada no fluxo sanguíneo dinâmico das artérias carótidas e vertebrais. Permite medir com precisão o calibre interno, espessura íntima-média (marcador cardiovascular precoce) e rastrear a presença e repercussão hemodinâmica de placas de gordura (estenose).",
     mostCommonBrazil: true,
     aliases: ["ultrassonografia de carotidas", "doppler de carotidas", "us de carotidas", "usg doppler de carotidas", "ultrassom de carotidas"],
@@ -917,7 +917,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Endoscopia Digestiva Alta",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Avaliação direta por imagem óptica por fibra de vídeo flexível da parede interna do Esôfago, Estômago e primeiras porções do Duodeno. Fundamental no diagnóstico e acompanhamento sob biópsia de refluxo gastresofágico (Esofagite), Hérnia de Hiato, Úlceras e inflamações severas (Gastrite de padrão erosivo, Bulboduodenite).",
     mostCommonBrazil: true,
     aliases: ["endoscopia", "endoscopia digestiva", "endoscopia digestiva alta", "eda", "videoendoscopia alta"],
@@ -928,7 +928,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Colonoscopia",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Exame óptico de vídeo que percorre internamente toda a extensão do Intestino Grosso (Cólon) e porção terminal do Íleo. Padrão de ouro absoluto para triagem, prevenção e remoção precoce de apólices benignas (pólipos coloniais), além do diagnóstico de doenças inflamatórias intestinais (Retocolite, Doença de Crohn).",
     mostCommonBrazil: false,
     aliases: ["colonoscopia", "videocolonoscopia", "colonoscopia completa", "video colonoscopia"],
@@ -939,7 +939,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ultrassonografia Pélvica Transvaginal",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Exame de imagem ginecológico de alta resolução por via vaginal que avalia detalhadamente o colo uterino, endométrio, miométrio e ovários. Indispensável para o diagnóstico e controle de miomas, adenomiose, cistos ovarianos, ovários policísticos, endometriose profunda e monitoramento inicial de gestação.",
     mostCommonBrazil: true,
     aliases: ["ultrassonografia transvaginal", "ultrassom transvaginal", "usg transvaginal", "us transvaginal", "usg pelvica transvaginal", "ultrassonografia ginecologica transvaginal"],
@@ -951,7 +951,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ultrassonografia de Abdome Superior",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Avaliação dirigida por ultrassom que analisa órgãos do andar superior do abdome (fígado, vesícula biliar, vias biliares, pâncreas e baço). Focado em rastreamento célere de esteatose hepática, colelitíase (pedra na vesícula) e alterações pancreáticas agudas.",
     mostCommonBrazil: true,
     aliases: ["ultrassonografia de abdome superior", "ultrassom abdome superior", "usg abdome superior", "us abdome superior", "ultrassonografia abdominal superior", "ultrassom hepatobiliar"],
@@ -962,7 +962,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ultrassonografia de Mamas",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Método complementar excelente de diagnóstico por imagem para diferenciação de nódulos mamários sólidos (fibradenomas, carcinoma) de lesões císticas preenchidas por líquido, além de guiar punções aspirativas e biópsias. Muito associado à Mamografia Digital em mamas de padrão denso.",
     mostCommonBrazil: true,
     aliases: ["ultrassonografia de mamas", "ultrassom de mama", "usg mamas", "us de mama", "ultrassonografia mamaria bilateral", "ultrassom de mama com doppler"],
@@ -973,7 +973,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Tomografia Computadorizada de Abdome Total",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Exame de raios-X helicoidal acoplado a computador que reconstrói em três dimensões todo o compartimento intra-abdominal e pélvico. Frequentemente realizado com contraste iodado intravenoso para investigação detalhada de abdome agudo, neoplasias viscerais e linfonodopatias.",
     mostCommonBrazil: false,
     aliases: ["tomografia de abdome total", "tc de abdome", "tomografia computadorizada do abdome total", "tc abdome total", "tc abdominal de alta resolucao"],
@@ -984,7 +984,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ressonância Magnética de Coluna Lombar",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Método de imagem de alta definição por ressonância magnética focado na região lombar e sacra. Proporciona contraste insuperável do parênquima para avaliação de discos intervertebrais (hérnias, extrusões), estenose de canal medular e compressões de nervos e raízes espinhais.",
     mostCommonBrazil: true,
     aliases: ["ressonancia de coluna lombar", "rm de coluna lombar", "ressonancia lombar", "rm cl", "ressonancia magnetica da coluna lombosacra", "rm lombossacra"],
@@ -995,7 +995,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ressonância Magnética de Coluna Cervical",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Mapeamento minucioso do pescoço e transição crânio-cervical por ressonância, permitindo avaliar a medula espinhal alta, compressão discal cervical, mielopatia cervical e radiculopatias de membros superiores.",
     mostCommonBrazil: false,
     aliases: ["ressonancia de coluna cervical", "rm de coluna cervical", "ressonancia cervical", "rm cc", "ressonancia magnetica cervical", "rm da coluna cervical"],
@@ -1006,7 +1006,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ressonância Magnética de Joelho",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Exame ortopédico de eleição para avaliação de tecidos moles articulares do joelho. Permite diagnosticar rupturas parciais ou totais de ligamentos cruzados (LCA e LCP) e colaterais, lesões de menisco lateral e medial, condromalácia patelar e derrames articulares.",
     mostCommonBrazil: true,
     aliases: ["ressonancia de joelho", "rm de joelho", "ressonancia magnetica do joelho", "rm joelho direito", "rm joelho esquerdo"],
@@ -1017,7 +1017,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Holter 24 Horas",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Monitoramento ambulatorial contínuo do ritmo ou atividade elétrica do coração por meio de um pequeno gravador portátil preso à cintura por um período mínimo de 24 horas. Fundamental para detectar palpitações fugazes, taquicardias, episódios ocultos de fibrilação atrial e risco de morte súbita.",
     mostCommonBrazil: true,
     aliases: ["holter 24 horas", "holter", "eletrocardiografia dinamica 24 horas", "holter de 3 canais", "cardioholter", "holter cardiaco"],
@@ -1029,7 +1029,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "M.A.P.A. (Monitorização Ambulatorial da Pressão Arterial)",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Registro automatizado das pressões sistólica e diastólica por 24 horas sob intervalos pré-programados enquanto o paciente realiza suas tarefas habituais e dorme. Padrão-ouro para diagnóstico de hipertensão limítrofe e identificação do ritmo de queda pressórica do sono (descenso fisiológico).",
     mostCommonBrazil: true,
     aliases: ["mapa", "m.a.p.a.", "monitorizacao ambulatorial da pressao arterial", "mapa 24 horas", "mapa de pressao arterial", "mapa pressao arterial de 24 horas"],
@@ -1040,7 +1040,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Teste Ergométrico Computadorizado",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Acompanhamento dinâmico do comportamento dinâmico eletrocardiográfico e pressórico diante de sobrecarga gradual por atividade física orientada em esteira ou cicloergômetro. Ideal para triar isquemia coronariana latente induzida pelo exercício.",
     mostCommonBrazil: true,
     aliases: ["teste ergometrico", "teste de esforco", "teste ergometrico computadorizado", "teste de esteira", "eletrocardiograma de esforco"],
@@ -1051,7 +1051,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Doppler Colorido de Membros Inferiores",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Estudo dinâmico das artérias ou veias das pernas por ultrassom e mapeamento de fluxo em cores. Crucial para confirmar a presença de trombose venosa profunda (TVP), insuficiência valvular venosa (varizes) ou obstruções críticas arteriais (claudicação intermitente).",
     mostCommonBrazil: true,
     aliases: ["doppler de membros inferiores", "ultrassom com doppler de membros inferiores", "doppler venoso membros inferiores", "doppler arterial pernas", "doppler bilateral pernas"],
@@ -1062,7 +1062,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Radiografia de Coluna",
-    category: "Exames de Imagem & Diagnóstico",
+    category: "Exames de Imagem",
     description: "Raios-X de triagem esquelética rápida da coluna vertebral dividida por segmentos (Cervical, Torácico, Lombar ou Lombossacro). Permite mensurar desvios de postura (escoliose, lordose acentuada), bicos de papagaio (osteófitos) e diminuição do espaço discal geral.",
     mostCommonBrazil: true,
     aliases: ["raio x de coluna", "rx de coluna", "radiografia de coluna lombar", "rx cervical", "raio-x da coluna lombo sacra"],
@@ -1073,7 +1073,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Saturação de Transferrina",
-    category: "Nutrição e Estoque de Ferro",
+    category: "Nutrientes",
     description: "Índice que estima a porcentagem de sítios de ligação da proteína transferrina ocupados pelo ferro circulante. Marcador de altíssima relevância no diagnóstico de anemias ferroprivas (quando baixa) ou hemocromatose hereditária (quando persistentemente elevada acima de 50%).",
     mostCommonBrazil: true,
     aliases: ["saturacao de transferrina", "indice de saturacao de transferrina", "saturacao da transferrina", "st"],
@@ -1084,7 +1084,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Capacidade Total de Ligação do Ferro (TIBC)",
-    category: "Nutrição e Estoque de Ferro",
+    category: "Nutrientes",
     description: "Mede o quão disponível estão as proteínas do sangue para se ligarem ao ferro sérico. Costuma aumentar compensatoriamente para otimizar a absorção em estados de carência grave de ferro corporal.",
     mostCommonBrazil: false,
     aliases: ["tibc", "capacidade de ligacao do ferro", "ctlf", "capacidade total de combinacao de ferro"],
@@ -1095,7 +1095,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Urocultura com Antibiograma",
-    category: "Função Renal/Urinário",
+    category: "Rins",
     description: "Cultura microbiológica de urina de jato médio para isolamento biológico de microrganismos invasores específicos (como E. coli), acompanhado do teste de susceptibilidade a antimicrobianos (antibiograma) que informa a quais antibióticos a bactéria é resistente ou sensível.",
     mostCommonBrazil: true,
     aliases: ["urocultura", "cultura de urina", "exame de urocultura", "antibiograma urina", "urocultura com antibiograma", "esquema antibiograma urina"],
@@ -1107,7 +1107,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Glicose Pós-Prandial",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Mede os níveis de glicose na circulação plasmática exatamente 2 horas após o início de uma refeição padronizada (geralmente almoço habitual ou carga de glicose). Avalia a eficácia dinâmica da secreção de insulina pós-carga.",
     mostCommonBrazil: true,
     aliases: ["glicose pos-prandial", "glicose pos prandial", "glicemia pos prandial", "glicemia pos-prandial", "glicose de 2h pos refeicao"],
@@ -1118,7 +1118,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Curva Glicêmica (TOTG)",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Teste Oral de Tolerância à Glicose. Envolve a mensuração sequencial de glicose plasmática em intervalos (ex: 0, 30, 60 e 120 minutos) após a ingestão de uma solução supersaturada de glicose (dextrosol). Exame primordial na confirmação de diabetes gestacional.",
     mostCommonBrazil: true,
     aliases: ["curva glicemica", "totg", "teste oral de tolerancia a glicose", "curva glicêmica de 3 pontos", "glicose apos dextrosol"],
@@ -1129,7 +1129,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Bilirrubinas (Total e Frações)",
-    category: "Função Hepática",
+    category: "Fígado",
     description: "Mensuração de subprodutos abundantes do catabolismo do grupo heme de hemácias envelhecidas degradadas, divididos em Bilirrubina Direta (conjugada pelo fígado) e Bilirrubina Indireta (livre circulante). Essencial na investigação de icterícia, anemias hemolíticas e obstruções biliares.",
     mostCommonBrazil: true,
     aliases: ["bilirrubinas", "bilirrubina total e fracoes", "bilirrubina direta", "bilirrubina indireta", "bilirrubina total", "dosagem de bilirrubinas"],
@@ -1140,7 +1140,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Beta HCG Quantitativo",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Dosagem quantitativa da subunidade beta do hormônio Gonadotrofina Coriônica Humana circulante no soro sanguíneo. Permite detectar gravidez ativa com altíssima sensibilidade a partir de poucos dias pós-concepção, operando também no acompanhamento do desenvolvimento gestacional precoce.",
     mostCommonBrazil: true,
     aliases: ["beta hcg quantitativo", "beta hcg", "hcg quantitativo", "hcg total quantitativo", "exame de gravidez de sangue", "bhcg quantitativo"],
@@ -1152,7 +1152,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Insulina Sérica",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Dosagem de Insulina basal produzida pelas células beta do pâncreas. Essencial no rastreamento de resistência à insulina precoce, hiperinsulinemia e no cálculo do índice HOMA-IR antes que ocorram alterações na glicose de jejum.",
     mostCommonBrazil: true,
     aliases: ["insulina", "insulina de jejum", "insulina basal", "insulina serica", "fasting insulin", "dosagem de insulina"],
@@ -1163,7 +1163,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Prolactina Sérica",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Hormônio secretado pela glândula hipófise anterior. Estimula a produção de leite durante a amamentação. Sua elevação fora do período gestacional/lactação (hiperprolactinaemia) pode sugerir adenomas hipofisários (prolactinomas), disfunções tireoidianas ou ser induzida por certos medicamentos, causando infertilidade, alterações menstruais ou galactorreia.",
     mostCommonBrazil: true,
     aliases: ["prolactina", "prolactina serica", "dosagem de prolactina", "prl"],
@@ -1174,7 +1174,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "DHEA-S (Sulfato de Deidroepiandrosterona)",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Hormônio androgênio produzido quase que exclusivamente pelas glândulas adrenais (suprarrenais). É o androgênio circulante mais abundante e serve como um excelente marcador da função adrenal e no rastreio de hirsutismo, acne severa, virilização feminina ou suspeita de Síndrome dos Ovários Policísticos (SOP).",
     mostCommonBrazil: false,
     aliases: ["dhea-s", "dheas", "sulfato de deidroepiandrosterona", "sulfato de dhea", "sdhea"],
@@ -1185,7 +1185,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "PTH (Paratormônio Intacto)",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Hormônio produzido pelas glândulas paratireoides. Exerce papel primordial no controle homeostático do Cálcio e Fósforo nos ossos, rins e intestinos. Essencial para diferenciar causas de hipercalcemia e hipocalcemia e no acompanhamento de osteodistrofia renal ou distúrbios da tireoide/paratireoide.",
     mostCommonBrazil: true,
     aliases: ["pth", "paratormonio", "paratormonio intacto", "pth intacto", "dosagem de pth", "pth serico"],
@@ -1196,7 +1196,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Homocisteína Plasmática",
-    category: "Marcadores de Inflamação",
+    category: "Autoimunidade",
     description: "Aminoácido intermediário no ciclo de metilação celular. Níveis persistentemente elevados de Homocisteína correlacionam-se com maior risco de aterosclerose, trombose venosa profunda e infarto, sendo frequentemente causados por deficiência de ácido fólico (B9) ou vitamina B12 (metilcobalamina).",
     mostCommonBrazil: false,
     aliases: ["homocisteina", "homocisteina plasmatica", "homocysteine", "homocisteina serica"],
@@ -1207,7 +1207,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Cortisol Salivar",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Dosagem rápida de cortisol livre e biologicamente ativo na saliva em períodos determinados (ex: manhã, tarde ou noite). Exame padrão de excelência para avaliar a rítmica circadiana da glândula adrenal e triagem de estresse crônico (hipocortisolismo ou hipercortisolismo/Síndrome de Cushing).",
     mostCommonBrazil: false,
     aliases: ["cortisol salivar", "cortisol na saliva", "dosagem de cortisol salivar", "cortisol ritmico salivar"],
@@ -1218,7 +1218,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Peptídeo C",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Dosagem do Peptídeo C, um subproduto direto da clivagem da proinsulina. Ao contrário da insulina, ele não sofre metabolização hepática de primeira passagem de forma expressiva, servindo como estimativa mais fidedigna e estável da secreção de insulina endógena real e na diferenciação de diabetes tipo 1 e tipo 2.",
     mostCommonBrazil: true,
     aliases: ["peptideo c", "peptideo-c", "c-peptide", "dosagem de peptideo c"],
@@ -1229,7 +1229,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "IGF-1 (Somatomedina C)",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Fator de Crescimento Semelhante à Insulina Tipo 1 (Somatomedina C), produzido principalmente pelo fígado sob estímulo direto do GH (Hormônio do Crescimento). Funciona como o principal biomarcador para diagnosticar e monitorar acromegalia, gigantismo ou deficiências de GH.",
     mostCommonBrazil: true,
     aliases: ["igf-1", "igf1", "somatomedina c", "somatomedina", "insulin-like growth factor 1"],
@@ -1240,7 +1240,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Aldosterona Sérica",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Hormônio esteroide mineralocorticoide sintetizado na zona glomerulosa da córtex adrenal. Regula o equilíbrio hidroeletrolítico por meio da reabsorção renal de sódio e secreção de potássio, sendo crucial na triagem de hipertensão refratária secundária a hiperaldosteronismo.",
     mostCommonBrazil: false,
     aliases: ["aldosterona", "aldosterona serica", "dosagem de aldosterona", "aldosterone"],
@@ -1251,7 +1251,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Atividade de Renina Plasmática (ARP)",
-    category: "Hormônios & Saúde Geral",
+    category: "Hormônios",
     description: "Mede o ritmo de conversão microbiológica de angiotensinogênio em angiotensina I, servindo como indicador indireto da liberação de renina pelo aparelho justa-glomerular. Essencial no cálculo da relação Aldosterona/Renina (ARR) para detectar hiperaldosteronismo primário.",
     mostCommonBrazil: false,
     aliases: ["renina", "renina plasmatica", "atividade de renina plasmatica", "arp", "atividade da renina"],
@@ -1262,7 +1262,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Eletroforese de Proteínas",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Separa as proteínas do soro sanguíneo em frações distintas (Albumina, Alfa-1, Alfa-2, Beta e Gama). Primordial para diagnosticar picos monoclonais (gamopatias monoclonais como o Mieloma Múltiplo), processos inflamatórios severos ou perda excessiva de imunoglobulinas.",
     mostCommonBrazil: true,
     aliases: ["eletroforese de proteinas", "eletroforese de proteinas sericas", "proteinas sericas eletroforese", "eletroforese de proteinas no sangue"],
@@ -1273,7 +1273,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Gasometria Arterial",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Mapeamento rápido e de alta precisão do equilíbrio metabólico e ácido-base sistêmico, avaliando pH sanguíneo arterial, pressão parcial de oxigênio (pO2), pressão parcial de gás carbônico (pCO2), bicarbonato (HCO3-), excesso de bases (BE) e saturação final de oxigênio.",
     mostCommonBrazil: true,
     aliases: ["gasometria arterial", "gasometria", "gasp", "gasometria de sangue arterial"],
@@ -1284,7 +1284,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Gasometria Venosa",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Avaliação do status ácido-base através de sangue venoso periférico, útil para triagem rápida de acidose metabólica grave e estimativa indireta do teor de bicarbonato sistêmico sem a necessidade de punção arterial dolorosa.",
     mostCommonBrazil: false,
     aliases: ["gasometria venosa", "gasometria de sangue venoso"],
@@ -1295,7 +1295,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Fator Reumatoide (FR)",
-    category: "Marcadores de Inflamação",
+    category: "Autoimunidade",
     description: "Autoanticorpo (geralmente da classe IgM) dirigido contra a porção Fc de imunoglobulinas da classe IgG. Exame clássico de rastreamento para investigação diagnóstica de artrite reumatoide, embora também possa positivar em outras enfermidades autoimunes e infecciosas.",
     mostCommonBrazil: true,
     aliases: ["fator reumatoide", "fr", "fator reumatoide latex", "prova do latex", "dosagem de fator reumatoide"],
@@ -1306,7 +1306,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anti-CCP (Anticorpos Anti-Peptídeo Citrulinado Cíclico)",
-    category: "Marcadores de Inflamação",
+    category: "Autoimunidade",
     description: "Marcador de altíssima especificidade diagnóstica (superior a 95%) para o diagnóstico precoce e prognóstico clínico da Artrite Reumatoide (AR), auxiliando na diferenciação diagnóstica de outras sinovites agudas.",
     mostCommonBrazil: false,
     aliases: ["anti ccp", "anti-ccp", "anticorpos anti-ccp", "anticorpo anti peptideo citrulinado ciclico"],
@@ -1317,7 +1317,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Apolipoproteína A-1 (Apo A-1)",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Proteína estrutural primordial das partículas que compõem os complexos de HDL (Colesterol bom), exercendo papel principal na mediação ativa do efluxo de colesterol livre celular por transporte reverso de lípidos de volta para descarte hepático.",
     mostCommonBrazil: false,
     aliases: ["apo a-1", "apolipoproteina a1", "apo a1", "apolipoproteina a-1", "apo-a1"],
@@ -1328,7 +1328,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Apolipoproteína B (Apo B)",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Subunidade proteica estrutural fundamental presente em todas as partículas lipoproteicas aterogênicas não-HDL (LDL, VLDL, IDL). Oferece um reflexo muito fiel do número real absoluto de partículas aterogênicas na circulação para estimativa rigorosa de risco coronariano residual.",
     mostCommonBrazil: false,
     aliases: ["apo b", "apolipoproteina b", "apo-b", "dosagem de apolipoproteina b"],
@@ -1339,7 +1339,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Tempo de Protrombina (TP / TAP)",
-    category: "Coagulação & Hemostasia",
+    category: "Sangue",
     description: "Avalia a via extrínseca e comum da cascata de coagulação. Frequentemente relatado como INR (RNI) e atividade de protrombina (TAP). Essencial para o monitoramento de terapia com anticoagulantes orais (como varfarina) e avaliação de função hepática sintética.",
     mostCommonBrazil: true,
     aliases: ["tp", "tap", "tempo de protrombina", "atividade de protrombina", "rni", "inr", "tempo de atividade de protrombina"],
@@ -1350,7 +1350,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Tempo de Tromboplastina Parcial Ativada (TTPA)",
-    category: "Coagulação & Hemostasia",
+    category: "Sangue",
     description: "Avalia a via intrínseca e comum da coagulação. Crucial no acompanhamento de terapia com heparina não fracionada, investigação de sangramentos inexplicados, distúrbios genéticos (como hemofilias) ou presença de inibidores como o anticoagulante lúpico.",
     mostCommonBrazil: true,
     aliases: ["ttpa", "ptt", "tempo de tromboplastina parcial ativada", "tempo de tromboplastina parcial", "ktt"],
@@ -1361,7 +1361,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Pesquisa de Sangue Oculto nas Fezes",
-    category: "Gastroenterologia & Coprologia",
+    category: "Gastroenterologia",
     description: "Pesquisa por métodos imunológicos altamente sensíveis (sem necessidade de dieta restritiva) ou químicos para detectar micro-sangramentos no trato gastrintestinal. É um dos principais exames de triagem preventiva para o câncer colorretal e lesões pré-cancerosas (pólipos).",
     mostCommonBrazil: true,
     aliases: ["sangue oculto", "sangue oculto nas fezes", "pesquisa de sangue oculto", "sangue oculto fezes", "pso"],
@@ -1372,7 +1372,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Parasitológico de Fezes (EPF)",
-    category: "Gastroenterologia & Coprologia",
+    category: "Gastroenterologia",
     description: "Exame parasitológico de fezes para pesquisa microscópica de ovos, cistos, larvas ou trofozoítos de helmintos e protozoários intestinais (como amebas, giárdia, lombrigas, etc.). Essencial para investigar diarreia crônica, dor abdominal difusa e anemias por má-absorção.",
     mostCommonBrazil: true,
     aliases: ["epf", "parasitologico", "parasitologico de fezes", "exame parasitologico", "parasitologico fezes", "pesquisa de parasitas"],
@@ -1383,7 +1383,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "VDRL (Sorologia para Sífilis)",
-    category: "Infectologia / Sorologias",
+    category: "Infectologia",
     description: "Exame não treponêmico de triagem sorológica para detecção de anticorpos circulantes contra a bactéria Treponema pallidum, causadora da sífilis. Permite rastreio populacional, diagnóstico e acompanhamento de resposta terapêutica através do título quantitativo de diluição.",
     mostCommonBrazil: true,
     aliases: ["vdrl", "vdrl quantitativo", "sorologia para sifilis", "vdrl serico", "sifilis vdrl"],
@@ -1394,7 +1394,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Sorologia para HIV (HIV 1 e 2)",
-    category: "Infectologia / Sorologias",
+    category: "Infectologia",
     description: "Detecção combinada de anticorpos conta os vírus HIV-1 e HIV-2 e do antígeno p24 do capsídeo viral (teste de 4ª geração) no soro. Fornece diagnóstico precoce extremamente seguro para a infecção pelo vírus da imunodeficiência humana.",
     mostCommonBrazil: true,
     aliases: ["hiv", "anti-hiv", "sorologia hiv", "anti hiv 1 e 2", "pesquisa de hiv", "hiv 1 2"],
@@ -1405,7 +1405,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "HBsAg (Antígeno de Superfície do Vírus da Hepatite B)",
-    category: "Infectologia / Sorologias",
+    category: "Infectologia",
     description: "Detecção do Antígeno de Superfície do vírus da Hepatite B (também historicamente conhecido como Antígeno Austrália). Sua presença indica infecção ativa (aguda ou crônica) pelo vírus HBV. Principal marcador no rastreamento e saúde ocupacional.",
     mostCommonBrazil: true,
     aliases: ["hbsag", "antigeno australia", "antigeno da hepatite b", "anti hbsag", "hepatite b hbsag"],
@@ -1416,7 +1416,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Toxoplasmose IgG e IgM",
-    category: "Infectologia / Sorologias",
+    category: "Infectologia",
     description: "Pesquisa de anticorpos das classes IgG (infecção antiga/imunidade) e IgM (sugestivo de infecção aguda ou recente) contra o parasita Toxoplasma gondii. De fundamental e obrigatório rastreamento pré-natal em gestantes susceptíveis devido ao risco de toxoplasmose congênita.",
     mostCommonBrazil: true,
     aliases: ["toxoplasmose", "toxo igg", "toxo igm", "sorologia toxoplasmose", "toxoplasmose igg e igm"],
@@ -1427,7 +1427,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Eletroforese de Hemoglobina",
-    category: "Hematologia",
+    category: "Sangue",
     description: "Método que separa e quantifica as diferentes frações de hemoglobina no sangue (Hb A1, Hb A2, Hb Fetal e formas anômalas como Hb S, Hb C, Hb D). Exame crucial para diagnóstico de hemoglobinopatias, anemias falciformes e traços talassêmicos.",
     mostCommonBrazil: true,
     aliases: ["eletroforese de hemoglobina", "eletroforese de hg", "hemoglobinopatias eletroforese", "hb eletroforese"],
@@ -1438,7 +1438,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Subpopulações de Linfócitos T (CD3, CD4 e CD8)",
-    category: "Hematologia & Imunologia",
+    category: "Sangue",
     description: "Quantificação e relação entre as subpopulações de linfócitos T auxiliares (CD4+) e citotóxicos (CD8+). Essencial para avaliar a integridade e status da imunidade celular de forma quantitativa, monitorar pacientes vivendo com HIV/AIDS e investigar imunodeficiências primárias.",
     mostCommonBrazil: true,
     aliases: ["cd4", "cd8", "cd3 cd4 cd8", "linfocitos t cd4 e cd8", "subpopulacao linfocitaria", "relacao cd4 cd8"],
@@ -1449,7 +1449,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ácido Valproico Sérico",
-    category: "Monitoramento Psiquiátrico e Terapêutico",
+    category: "Toxicologia",
     description: "Dosagem sérica do Ácido Valproico (ou Valproato de Sódio), um fármaco antiepiléptico e estabilizador de humor amplamente utilizado no transtorno bipolar e crises convulsivas. Permite o ajuste posológico milimétrico para manter o paciente no intervalo terapêutico eficaz (50 a 100 mcg/mL).",
     mostCommonBrazil: false,
     aliases: ["acido valproico", "valproato de sodio", "dosagem de acido valproico", "depakene", "depakote"],
@@ -1460,7 +1460,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Carbamazepina Sérica",
-    category: "Monitoramento Psiquiátrico e Terapêutico",
+    category: "Toxicologia",
     description: "Dosagem terapêutica de Carbamazepina no sangue. Utilizada como anticonvulsivante em crises e estresse neurálgico (como neuralgia do trigêmeo) e como estabilizador de humor. Janela terapêutica estrita de 4 a 12 mcg/mL.",
     mostCommonBrazil: false,
     aliases: ["carbamazepina", "dosagem de carbamazepina", "tegretol"],
@@ -1470,7 +1470,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpos Anti-Peroxidase Tireoidiana (Anti-TPO)",
-    category: "Hormônios Tireoidianos & Autoimunidade",
+    category: "Tireoide",
     description: "Principal autoanticorpo direcionado contra a enzima peroxidase tireoidiana. É o marcador padrão e de altíssima relevância no diagnóstico de tireoidite autoimune (Tireoidite de Hashimoto) e na avaliação prévia de risco de progressão para hipotireoidismo clínico.",
     mostCommonBrazil: true,
     aliases: ["anti-tpo", "antitpo", "anti tpo", "anticorpos anti peroxidase", "anticorpo anti-peroxidase tireoidiana"],
@@ -1489,7 +1489,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpos Anti-Tireoglobulina (Anti-Tg)",
-    category: "Hormônios Tireoidianos & Autoimunidade",
+    category: "Tireoide",
     description: "Autoanticorpo dirigido contra a tireoglobulina, principal glicoproteína de armazenamento de hormônios tireoidianos. Concomitante com o Anti-TPO na identificação de doenças autoimunes da tireoide e fundamental pós-tireoidectomia para validação da utilidade da dosagem de tireoglobulina como marcador tumoral.",
     mostCommonBrazil: true,
     aliases: ["anti-tg", "antitg", "anti tg", "anticorpos anti tireoglobulina"],
@@ -1500,7 +1500,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Albumina Sérica",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Proteína mais abundante do plasma, sintetizada unicamente pelo fígado. É primária no controle de carência nutricional, manutenção da pressão oncótica microvascular (evitando edemas) e atua no transporte plasmático de dezenas de hormônios e medicamentos.",
     mostCommonBrazil: true,
     aliases: ["albumina", "albumina serica", "dosagem de albumina", "albumina no sangue"],
@@ -1511,7 +1511,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "ASLO (Antiestreptolisina O)",
-    category: "Marcadores de Inflamação & Autoimunidade",
+    category: "Autoimunidade",
     description: "Mede os anticorpos contra a estreptolisina O, toxina produzida pela bactéria Streptococcus pyogenes (Estreptococo do grupo A). Essencial no diagnóstico retrospectivo de infecções estreptocócicas recentes para monitoração de risco de Febre Reumática ou Glomerulonefrite Pós-Estreptocócica (GNPE).",
     mostCommonBrazil: true,
     aliases: ["aslo", "antiestreptolisina", "antiestreptolisina o", "aso", "anti-estreptolisina o"],
@@ -1522,7 +1522,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Lactato Sérico (Ácido Lático)",
-    category: "Bioquímica & Metabolismo",
+    category: "Metabolismo",
     description: "Subproduto do metabolismo anaeróbico da glicose. Níveis elevados de lactato indicam hipóxia tecidual (falta de oxigênio), sendo marcador fundamental em medicina de emergência, sepse, choque e desidratação celular grave.",
     mostCommonBrazil: false,
     aliases: ["lactato", "lactato serico", "acido latico", "lactate", "lactatemia"],
@@ -1533,7 +1533,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Sorologia para Hepatite C (Anti-HCV)",
-    category: "Infectologia / Sorologias",
+    category: "Infectologia",
     description: "Pesquisa de anticorpos específicos da classe IgG dirigidos contra o vírus da Hepatite C (HCV). Sua positividade acusa contato prévio ou infecção ativa cronificada, exigindo confirmação por biologia molecular (carga viral HCV-RNA).",
     mostCommonBrazil: true,
     aliases: ["anti-hcv", "antihcv", "anti hcv", "sorologia hepatite c", "pesquisa de hepatite c"],
@@ -1544,7 +1544,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Citopatológico Cérvico-Vaginal (Papanicolau)",
-    category: "Ginecologia & Citopatologia",
+    category: "Saúde Feminina",
     description: "Exame citológico preventivo clássico de raspado cervical que rastreia alterações inflamatórias, microbiológicas (como Candida, Gardenella) e, primordialmente, displasias celulares e lesões pré-neoplásicas ligadas ao Papilomavírus Humano (HPV).",
     mostCommonBrazil: true,
     aliases: ["papanicolau", "preventivo cervical", "colpocitologia", "citopatologico cervico vaginal", "citopatologico", "exame preventivo"],
@@ -1555,7 +1555,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Fator Antinuclear (FAN) / Auto-anticorpos",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Pesquisa de anticorpos voltados contra o núcleo das próprias células. Padrão-ouro para rastrear a presença de doenças reumatológicas e autoimunes sistêmicas, como o Lúpus Eritematoso Sistêmico (LES).",
     mostCommonBrazil: true,
     aliases: ["fan", "fator antinuclear", "pesquisa de autoanticorpos", "anticorpos antinucleares", "he2", "anticorpos contra nucleo", "lupus"],
@@ -1574,7 +1574,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "FAN - Nuclear",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Mede especificamente a presença e o padrão de anticorpos que atacam estruturas no núcleo das células (como DNA e proteínas solúveis). O achado Reagente pontilhado fino ou denso com titulação (ex: até 1/640) é clinicamente relevante.",
     mostCommonBrazil: true,
     aliases: ["fan nuclear", "fator antinuclear nuclear"],
@@ -1591,7 +1591,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "FAN - Nucleolar",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Investiga anticorpos direcionados contra o nucléolo celular, responsável pela produção de ribossomos. Padrões reagentes aqui têm forte associação clássica com a Esclerodermia (Esclerose Sistêmica).",
     mostCommonBrazil: true,
     aliases: ["fan nucleolar", "fator antinuclear nucleolar"],
@@ -1608,7 +1608,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "FAN - Citoplasmático",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Pesquisa reações autoimunes voltadas contra compostos e organelas suspensas no citoplasma celular, como as mitocôndrias ou os ribossomos. Associados a miopatias ou quadros biliares.",
     mostCommonBrazil: true,
     aliases: ["fan citoplasmatico", "fator antinuclear citoplasmatico"],
@@ -1624,7 +1624,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "FAN - Aparelho Mitótico",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Raríssima pesquisa de autoanticorpos que atacam as estruturas físicas e os microtúbulos envolvidos na divisão mitótica das células.",
     mostCommonBrazil: true,
     aliases: ["fan aparelho mitotico", "fator antinuclear aparelho mitotico"],
@@ -1640,7 +1640,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "FAN - Placa Cromossômica Metafásica",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Identifica anticorpos direcionados contra cromossomos condensados na fase metafásica. Reagentes neste teste sugerem autoanticorpos anti-centrômero característicos ou anti-DNA.",
     mostCommonBrazil: true,
     aliases: ["fan placa cromossomica metafasica", "fator antinuclear placa cromossomica metafasica"],
@@ -1656,7 +1656,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-DNA Dupla Hélice (dsDNA)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Marcador autoimune altamente específico para o Lúpus Eritematoso Sistêmico (LES). Fundamental para o diagnóstico e também para medir a atividade da doença inflamatória contínua, em especial o acometimento renal (nefrite lúpica).",
     mostCommonBrazil: false,
     aliases: ["anti dna", "anti-dna", "anti dna dupla helice", "dsdna", "anti-dsdna", "lupus"],
@@ -1667,7 +1667,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Sm",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Anticorpo direcionado contra proteínas do núcleo. Apresenta elevadíssima especificidade para o Lúpus Eritematoso Sistêmico (LES), sendo um dos critérios diagnósticos fundamentais da doença.",
     mostCommonBrazil: false,
     aliases: ["anti sm", "anti-sm", "anti smith", "antism", "lupus"],
@@ -1678,7 +1678,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Ro (SSA)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Anticorpo comum em doenças reumatológicas. É classicamente associado à Síndrome de Sjögren e Lúpus (incluindo lúpus neonatal). Responsável, em gestantes, por bloqueio atrioventricular congênito no feto.",
     mostCommonBrazil: false,
     aliases: ["anti ro", "anti-ro", "anti ssa", "anti-ssa", "ssa", "lupus"],
@@ -1689,7 +1689,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-La (SSB)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Anticorpo autoimune. Quase sempre encontrado de forma associada ao fator Anti-Ro. Auxilia o refinamento diagnóstico clínico de Lúpus e Síndrome de Sjögren primária.",
     mostCommonBrazil: false,
     aliases: ["anti la", "anti-la", "anti ssb", "anti-ssb", "ssb", "lupus"],
@@ -1700,7 +1700,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticoagulante Lúpico",
-    category: "Fatores de Hemostasia & Coagulação",
+    category: "Sangue",
     description: "Imunoglobulina que interfere paradoxalmente na cascata de coagulação in vitro. Usado para o diagnóstico de Síndrome do Anticorpo Antifosfolípide (SAAF) e risco de tromboses, frequentemente ligado ao lúpus.",
     mostCommonBrazil: false,
     aliases: ["anticoagulante lupico", "lupico", "lupico anticoagulante", "saaf", "pesquisa de anticoagulante lupico", "lupus"],
@@ -1711,7 +1711,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Complemento C3",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Fração mais abundante das proteínas do Sistema Complemento. No Lúpus (LES) em atividade e doenças vasculíticas, esses valores costumam cair acentuadamente, refletindo inflamação aguda (consumo rápido).",
     mostCommonBrazil: false,
     aliases: ["complemento c3", "c3", "fracao c3", "complemento", "lupus"],
@@ -1722,7 +1722,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Complemento C4",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Fração do complemento avaliada em conjunto com a C3. Fica muito reduzido nas exacerbações clássicas de doenças por imunocomplexos sistêmicos, como a nefrite lúpica ativa e certas gamopatias.",
     mostCommonBrazil: false,
     aliases: ["complemento c4", "c4", "fracao c4", "complemento", "lupus"],
@@ -1733,7 +1733,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Antígeno HLA-B27",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Antígeno de histocompatibilidade leucocitária humana de classe I altamente associado a espondiloartropatias soronegativas, principalmente a Espondilite Anquilosante (associação > 90%), Artrite Reativa e Artrite Psoriásica.",
     mostCommonBrazil: false,
     aliases: ["hla b27", "hlab27", "hla-b27", "antigeno hla b27", "espondilite anquilosante"],
@@ -1744,7 +1744,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "ANCA (Anticorpos Anticitoplasma de Neutrófilos)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Dosagem de anticorpos direcionados a componentes citoplasmáticos de neutrófilos. Dividido classicamente em padrão peri-nuclear (p-ANCA, contra mieloperoxidase) e citoplasmático (c-ANCA, contra proteinase-3). Auxilia no diagnóstico de vasculites autoimunes sistêmicas profundas e colite ulcerativa.",
     mostCommonBrazil: false,
     aliases: ["anca", "p-anca", "c-anca", "anticorpos anticitoplasma de neutrofilos", "anticorpo anticitoplasma", "panca", "canca", "vasculite"],
@@ -1755,7 +1755,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Scl-75 / Anti-Scl-70",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Anticorpo autoimune voltado contra a enzima DNA topoisomerase I (Scl-70). Apresenta altíssima especificidade para a forma sistêmica e difusa da Esclerodermia (Esclerose Sistêmica), sendo também marcador de risco para fibrose pulmonar progressiva.",
     mostCommonBrazil: false,
     aliases: ["anti scl-70", "anti scl70", "anti-scl70", "anti-scl-70", "anti topoisomerase i", "anti sct70", "scl 70", "esclerodermia"],
@@ -1766,7 +1766,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Jo-1",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Autoanticorpo direcionado contra a enzima histidil-tRNA sintetase. É o marcador imunológico chave de miopatias inflamatórias autoimunes primárias (como a Polimiosite e Dermatomiosite) associadas à Síndrome Antissintetase.",
     mostCommonBrazil: false,
     aliases: ["anti jo 1", "anti jo-1", "anti-jo1", "anti-jo-1", "jo-1", "jo1", "polimiosite", "dermatomiosite"],
@@ -1777,7 +1777,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Centrômero",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Anticorpo autoimune voltado contra as proteínas centroméricas da divisão celular. Classicamente relacionado de maneira muito forte à Esclerose Sistêmica Limitada (Síndrome CREST - Calcinose, Raynaud, Esofagopatia, Esclerodactilia, Telangiectasia) e cirrose biliar primária.",
     mostCommonBrazil: false,
     aliases: ["anti centromero", "anticorpo anti centromero", "anti-centromero", "centromero", "crest"],
@@ -1788,7 +1788,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpos Anti-Cardiolipina (IgG / IgM)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Autoanticorpos da classe IgG e IgM voltados contra fosfolipídios de membrana. Componente fundamental dos critérios de classificação diagnóstica e monitoramento da Síndrome do Anticorpo Antifosfolípide (SAAF), fortemente vinculada com a trombofilia adquirida e abortamento de repetição.",
     mostCommonBrazil: false,
     aliases: ["anti cardiolipina", "anticardiolipina", "anti-cardiolipina", "cardiolipina", "cardiolipina igg igm", "saaf", "cardiolipina igg", "cardiolipina igm"],
@@ -1799,7 +1799,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Complemento Total (CH50)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Exame que mede a atividade funcional hemolítica global coordenada de todas as proteínas ligadas à via clássica de ativação do Sistema Complemento. É extremamente útil para o acompanhamento da atividade inflamatória sistemática do Lúpus e diagnósticos de deficiências imunitárias hereditárias.",
     mostCommonBrazil: false,
     aliases: ["ch50", "ch-50", "complemento ch50", "atividade do complemento total", "capacidade hemolitica total", "ch 50", "complementototal"],
@@ -1810,7 +1810,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Fator Reumatóide (FR)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Autoanticorpo direcionado contra a porção Fc da imunoglobulina humana. Amplamente utilizado como exame de triagem diagnóstica para a Artrite Reumatóide (AR) e Syndrome de Sjögren, além de outras nefropatias autoimunes e infecções crônicas.",
     mostCommonBrazil: true,
     aliases: ["fator reumatoide", "fr", "fator reumatoide quantitativo", "prova de waaler rose", "reumatoide", "fator latex", "latex"],
@@ -1821,7 +1821,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-CCP (Peptídeo Citrulinado Cíclico)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Autoanticorpo de altíssima especificidade (>95%) e alta sensibilidade para o diagnóstico precoce da Artrite Reumatóide. É um excelente preditor de evolução radiológica erosiva articular crônica.",
     mostCommonBrazil: false,
     aliases: ["anti ccp", "anti-ccp", "anticorpo anti peptideo citrulinado", "anticorpo anti ccp", "anticcp", "peptideo citrulinado"],
@@ -1832,7 +1832,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-RNP (Ribonucleoproteína)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Autoanticorpo contra a proteína U1-RNP. É o marcador imunológico indispensável e definidor do diagnóstico de Doença Mista do Tecido Conjuntivo (DMTC). Também pode ser encontrado em títulos menores no Lúpus.",
     mostCommonBrazil: false,
     aliases: ["anti rnp", "anti-rnp", "anti u1 rnp", "u1rnp", "antirnp", "ribonucleoproteina"],
@@ -1843,7 +1843,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Histona",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Anticorpo autoimune direcionado contra as proteínas histonas que envolvem o DNA celular. Encontra-se positivo em mais de 95% dos pacientes com Lúpus Induzido por Drogas (fármacos como hidralazina, procainamida, fenitoína).",
     mostCommonBrazil: false,
     aliases: ["anti histona", "anti-histona", "antihistona", "anticorpos anti-histonas"],
@@ -1854,7 +1854,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpos Anti-Beta-2-Glicoproteína I (IgG / IgM)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Anticorpos direcionados contra o cofator beta-2-glicoproteína I. Trata-se de um marcador sorológico de alta relevância para fechar o diagnóstico de Síndrome do Anticorpo Antifosfolípide (SAAF) quando correlacionado a tromboses.",
     mostCommonBrazil: false,
     aliases: ["anti beta 2 glicoproteina i", "anti-beta 2 glicoproteina", "beta 2 glicoproteina", "anti beta2 glicoproteina i", "anti beta-2-glicoproteina i", "anti beta 2"],
@@ -1865,7 +1865,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Tireoperoxidase (Anti-TPO)",
-    category: "Hormônios & Tireoide",
+    category: "Tireoide",
     description: "Autoanticorpo direcionado contra a principal enzima envolvida na síntese de hormônios tireoidianos. É o marcador mais sensível para o diagnóstico de Doenças Autoimunes da Tireoide, destacando-se na Tireoidite de Hashimoto.",
     mostCommonBrazil: true,
     aliases: ["anti tpo", "anti-tpo", "antitpo", "anti tireoperoxidase", "anticorpo anti peroxidase tireoidiana", "peroxidase tireoidiana"],
@@ -1876,7 +1876,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Tireoglobulina (Anti-TG)",
-    category: "Hormônios & Tireoide",
+    category: "Tireoide",
     description: "Autoanticorpo direcionado contra a proteína tireoglobulina, a reserva molecular de tireóide. Avaliado em conjunto com o anti-TPO no diagnóstico de Hashimoto e no pós-trataamento de neoplasia diferenciada de tireóide.",
     mostCommonBrazil: false,
     aliases: ["anti tg", "anti-tg", "antitg", "anti tireoglobulina", "anticorpo anti tireoglobulina"],
@@ -1887,7 +1887,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Antiestreptolisina O (ASLO)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Dosagem quantitativa de anticorpos contra a estreptolisina O, produzida pelo Estreptococo do grupo A. Níveis elevados identificam infecções estreptocócicas recentes que podem induzir complicações pós-infecciosas autoimunes, como Febre Reumática e Glomerulonefrite.",
     mostCommonBrazil: true,
     aliases: ["aslo", "aso", "antiestreptolisina", "antiestreptolisina o", "dosagem de aslo", "anti-estreptolisina"],
@@ -1898,7 +1898,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Velocidade de Hemossedimentação (VHS)",
-    category: "Inflamação & Triagem",
+    category: "Autoimunidade",
     description: "Exame laboratorial cinético simples que mede a taxa de queda dos glóbulos vermelhos no tubo de ensaio em 1 hora. Reflete indiretamente o aumento de proteínas de fase aguda (fibrinogênio, imunoglobulinas) no plasma, denotando inflamação sistêmica em atividade.",
     mostCommonBrazil: true,
     aliases: ["vhs", "velocidade de hemossedimentacao", "velocidade de sedimentacao das hemacias", "vhs 1 hora"],
@@ -1909,7 +1909,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpos Anti-Transglutaminase Tecidual (tTG - IgA / IgG)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Exame sorológico de escolha e de altíssima cura e acurácia para triagem e acompanhamento de indivíduos suspeitos de Doença Celíaca (intolerância permanente ao glúten mediada por mecanismos imunológicos).",
     mostCommonBrazil: false,
     aliases: ["anti transglutaminase", "anti transglutaminase tecidual", "anti-transglutaminase", "anti ttg", "ttg iga", "ttg igg", "transglutaminase tecidual"],
@@ -1920,7 +1920,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpos Anti-Endomísio (EMA - IgA / IgG)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Anticorpos direcionados contra o endomísio (camada conectiva muscular). Apresenta quase 100% de especificidade diagnóstica para a Doença Celíaca, sendo utilizado em conjunto com o Anti-tTG para confirmação diagnóstica robusta sem biópsia.",
     mostCommonBrazil: false,
     aliases: ["anti endomisio", "anti-endomisio", "anti endomisio iga", "anti endomisio igg", "ema iga", "ema igg", "endomisio"],
@@ -1931,7 +1931,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-LKM1 (Microssoma de Fígado e Rim Tipo 1)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Marcador autoimune hepático de extrema importância. Característico e definidor no diagnóstico diferencial da Hepatite Autoimune do Tipo 2, manifestando-se predominantemente em crianças e mulheres jovens.",
     mostCommonBrazil: false,
     aliases: ["anti lkm1", "anti lkm-1", "anti-lkm1", "anti-lkm-1", "microssoma de figado e rim", "lkm1"],
@@ -1942,7 +1942,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Músculo Liso (ASMA)",
-    category: "Imunologia & Autoimunidade",
+    category: "Autoimunidade",
     description: "Autoanticorpos da classe IgG direcionados aos filamentos contráteis celulares. É o marcador principal indireto no auxílio diagnóstico de Hepatite Autoimune Tipo 1, presente em cerca de 70-80% dos casos ativos.",
     mostCommonBrazil: false,
     aliases: ["anti musculo liso", "anti-musculo liso", "anticorpo antimúsculo liso", "asma", "musculo liso"],
@@ -1953,7 +1953,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Cistatina C",
-    category: "Função Renal / Urinário",
+    category: "Rins",
     description: "Marcador proteico sérico altamente preciso para avaliação da taxa de filtração glomerular. Diferente da Creatinina, não sofre variação por massa muscular corporal, dieta ou gênero. Crucial no acompanhamento precoce e refinado de pacientes com Nefropatia por IgA ou outras nefropatias.",
     mostCommonBrazil: false,
     aliases: ["cistatina", "cistatina c", "cystatin c", "cystatin"],
@@ -1991,7 +1991,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Sorologia para Dengue (NS1, IgG e IgM)",
-    category: "Infectologia / Sorologias",
+    category: "Infectologia",
     description: "Conjunto de análises para detecção do vírus da Dengue. O antígeno NS1 é detectável nos primeiros dias de febre aguda, enquanto os anticorpos IgM indicam infecção recente ativa e IgG sinaliza imunidade adquirida após exposição prévia.",
     mostCommonBrazil: true,
     aliases: ["dengue", "sorologia dengue", "dengue igg", "dengue igm", "antigeno ns1", "dengue ns1", "pesquisa de dengue"],
@@ -2010,7 +2010,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Coenzima Q10 (Ubiquinona)",
-    category: "Bioquímica & Nutrologia",
+    category: "Nutrientes",
     description: "Mede os estoques circulantes da Coenzima Q10, uma benzoquinona lipossolúvel fundamental para o transporte de elétrons na cadeia respiratória mitocondrial e para a produção de ATP. Atua como potente antioxidante lipídico, protegendo as membranas contra estresse oxidativo. Crucial para prevenir mialgias causadas por estatinas, dar suporte a pacientes com fadiga mitocondrial crônica e auxiliar no manejo integrativo da dor na Fibromialgia.",
     mostCommonBrazil: false,
     aliases: ["coenzima q10", "coq10", "q10", "ubiquinona", "dosagem de coenzima q10"],
@@ -2029,7 +2029,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Relação Proteína/Creatinina Urinária (RPC)",
-    category: "Função Renal / Urinário",
+    category: "Rins",
     description: "Método prático e extremamente confiável para estimar a perda de proteínas totais de 24 horas a partir de uma amostra isolada de urina. Expressa a quantidade de proteína eliminada por grama de creatinina excretada, contornando variações provocadas por taxas de fluxo urinário. Fundamental para triagem e acompanhamento rigoroso de nefropatias glomerulares (como a Nefropatia por IgA), permitindo intervir precocemente contra a progressão renal.",
     mostCommonBrazil: true,
     aliases: ["rpc", "relacao proteina creatinina", "proteina creatinina", "proteinuria isolada", "proteina/creatinina", "relação proteína creatinina para amostra isolada", "proteinuria de amostra isolada"],
@@ -2049,7 +2049,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Vitamina D (1,25-di-hidróxi)",
-    category: "Vitaminas & Hormônios",
+    category: "Nutrientes",
     description: "Representa a forma biologicamente ativa da vitamina D (calcitriol), produzida pelos rins a partir da hidroxilação secundária da 25-hidroxivitamina D. Estimula diretamente a absorção de cálcio e fósforo no intestino delgado. É útil no diagnóstico diferencial de hipercalcemia crônica, hipoparatiroidismo grave, raquitismo ou no acompanhamento de doença renal crônica avançada.",
     mostCommonBrazil: false,
     aliases: ["vitamina d3 125", "calcitriol", "1,25 dihydroxyvitamin d", "1 25 di-hidroxi vitamina d", "1 25-di-hidroxivitamina d", "125-di-hidroxi", "vitamina d ativa"],
@@ -2067,7 +2067,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Lipoproteína (a) [Lp(a)]",
-    category: "Cardiologia / Perfil Lipídico",
+    category: "Coração",
     description: "Partícula semelhante ao LDL-colesterol, mas com uma apolipoproteína (a) adicional ligada covalentemente. Seus níveis circulantes são determinados geneticamente entre 70% e 90%, variando muito pouco com dieta e exercícios. É considerada um fator de risco independente e de longo prazo para infarto do miocárdio, derrame cerebral e estenose da válvula aórtica.",
     mostCommonBrazil: false,
     aliases: ["lipoproteina a", "lp a", "lpa", "lipoproteina(a)", "dosagem de lipoproteina a", "lp(a)", "lipoproteina a dosagem"],
@@ -2105,7 +2105,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Sorologia para Vírus Epstein-Barr (EBV IgG e IgM)",
-    category: "Infectologia / Sorologias",
+    category: "Infectologia",
     description: "Painel sorológico para detectar anticorpos contra antígenos do vírus Epstein-Barr (EBV), membro da família dos herpesvírus causador da Mononucleose Infecciosa. É um vírus de latência crônica, frequentemente associado de forma integradora a episódios de fadiga crônica persistente e ativação de reações autoimunes latentes.",
     mostCommonBrazil: false,
     aliases: ["epstein barr", "ebv", "sorologia epstein barr", "epstein barr igg", "epstein barr igm", "anti vca igg", "anti vca igm", "pesquisa de epstein barr"],
@@ -2124,7 +2124,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Anticorpo Anti-Receptor de TSH (TRAB)",
-    category: "Vitaminas & Hormônios",
+    category: "Nutrientes",
     description: "Autoanticorpo direcionado ao receptor do hormônio estimulante da tireoide (TSH). Pode atuar como estimulador direto, levando à produção descontrolada de hormônios tireoidianos. É o marcador imunológico de escolha definitiva para o diagnóstico diferencial de Doença de Graves (principal causa de hipertireoidismo primário).",
     mostCommonBrazil: false,
     aliases: ["trab", "anti trab", "anticorpo anti trab", "receptor de tsh", "anticorpo anti receptor de tsh", "dosagem de trab", "anti-receptor de tsh"],
@@ -2143,7 +2143,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Vitamina B12 Ativa (Holotranscobalamina)",
-    category: "Vitaminas & Hormônios",
+    category: "Nutrientes",
     description: "Representa a fração da vitamina B12 (cobalamina) acoplada à proteína transportadora transcobalamina II. É a única forma de B12 capaz de entrar ativamente nas células corporais para exercer suas funções metabólicas cruciais (como síntese de DNA e mielinização neurológica). É um marcador muito mais fiel de deficiência inicial de vitamina B12 do que a B12 sérica total, que inclui frações ligadas a proteínas inertes de transporte.",
     mostCommonBrazil: false,
     aliases: ["b12 ativa", "holotranscobalamina", "holotc", "b12 holotranscobalamina", "vitamina b12 ativa", "holotranscobalamina serica"],
@@ -2162,7 +2162,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Peptídeo Natriurético Tipo B (BNP)",
-    category: "Cardiologia",
+    category: "Coração",
     description: "Hormônio secretado predominantemente pelos ventrículos cardíacos em resposta ao aumento de pressão/estiramento da parede miocárdica. É o biomarcador padrão-ouro para triagem, diagnóstico e estratificação de gravidade na insuficiência cardíaca (IC).",
     mostCommonBrazil: true,
     aliases: ["bnp", "peptideo natriuretico", "dosagem de bnp", "nt probnp", "nt-probnp", "peptideo natriuretico tipo b", "dosagem de pro-bnp"],
@@ -2181,7 +2181,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Relação Albumina/Creatinina Urinária (RAC)",
-    category: "Função Renal / Urinário",
+    category: "Rins",
     description: "Forma diagnóstica preferencial para detectar e monitorar a presença de microalbuminúria (fração mínima de albumina na urina) de maneira precoce, evitando a necessidade de coleta de urina de 24 horas. Essencial na avaliação e prevenção de nefropatia em pacientes hipertensos ou diabéticos.",
     mostCommonBrazil: true,
     aliases: ["rac", "relacao albumina creatinina", "microalbuminuria isolada", "albumina creatinina urinaria", "albumina/creatinina", "relacao albumina/creatinina de amostra isolada"],
@@ -2200,7 +2200,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Cobre Sérico",
-    category: "Nutrologia / Metais",
+    category: "Nutrientes",
     description: "Dosagem do cobre no sangue, elemento essencial na formação de hemoglobina, mielina, colágeno e no equilíbrio de neurotransmissores importantes no sistema nervoso central.",
     mostCommonBrazil: false,
     aliases: ["cobre serico", "dosagem de cobre", "cobre plasmatico", "copper", "cobre"],
@@ -2219,7 +2219,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Ceruloplasmina",
-    category: "Nutrologia / Metais",
+    category: "Nutrientes",
     description: "Principal proteína transportadora de cobre no organismo humano, produzida no fígado. Atua também como enzima ferroxidase vital, oxidando o ferro para viabilizar seu transporte regular pela transferrina no sangue.",
     mostCommonBrazil: false,
     aliases: ["ceruloplasmina", "ceruloplasmina serica", "dosagem de ceruloplasmina"],
@@ -2238,7 +2238,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Vitamina A (Retinol)",
-    category: "Vitaminas & Hormônios",
+    category: "Nutrientes",
     description: "Dosagem dos níveis de Retinol, forma ativa sérica primária da Vitamina A. Essencial para a integridade celular do sistema visual, imunidade mucosa de barreira, renovação adequada dos tecidos e potente ação antioxidante geral.",
     mostCommonBrazil: false,
     aliases: ["vitamina a", "retinol serico", "retinol", "vitamina a dosagem", "dosagem de vitamina a", "vitamina a serica"],
@@ -2257,7 +2257,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Vitamina E (Alfa-tocoferol)",
-    category: "Vitaminas & Hormônios",
+    category: "Nutrientes",
     description: "Mensuração sérica do alfa-tocoferol, vitamina lipossolúvel com poderosíssimo papel antioxidante na proteção do estresse oxidativo das membranas de gordura celular e prevenção de danos em bainha de mielina neurológica.",
     mostCommonBrazil: false,
     aliases: ["vitamina e", "alfa tocoferol", "alfa-tocoferol", "dosagem de vitamina e", "vitamina e serica"],
@@ -2276,7 +2276,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Adiponectina",
-    category: "Endocrinologia / Metabolismo",
+    category: "Metabolismo",
     description: "Hormônio derivado dos adipócitos (adipocina) com potentes ações sensibilizadoras de insulina, anti-inflamatórias e antiatrogênicas. Ao contrário de outras substâncias produzidas pelo tecido adiposo, seus níveis circulantes são inversamente proporcionais ao índice de gordura visceral do indivíduo.",
     mostCommonBrazil: false,
     aliases: ["adiponectina", "adiponectina serica", "dosagem de adiponectina", "adiponectin"],
@@ -2295,7 +2295,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Leptina",
-    category: "Endocrinologia / Metabolismo",
+    category: "Metabolismo",
     description: "Hormônio proteico secretado pelos adipócitos responsável pela sinalização de saciedade a nível hipotalâmico e modulação da taxa metabólica basal. Na obesidade e em estados inflamatórios crônicos de longo prazo, observa-se frequentemente uma 'resistência à leptina', na qual o cérebro deixa de responder de forma ideal ao hormônio.",
     mostCommonBrazil: false,
     aliases: ["leptina", "leptina serica", "dosagem de leptina", "leptin"],
@@ -2314,7 +2314,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Sorologia para Citomegalovírus (CMV IgG e IgM)",
-    category: "Infectologia / Sorologias",
+    category: "Infectologia",
     description: "Painel sorológico para quantificação de anticorpos contra o Citomegalovírus (CMV), vírus comum da família dos herpesvírus. Após a infecção primária, o vírus permanece em estado de latência vitalícia no interior das células brancas do sangue, podendo reativar-se sob condições específicas de estresse celular ou imunossupressão.",
     mostCommonBrazil: true,
     aliases: ["citomegalovirus", "cmv", "sorologia citomegalovirus", "cmv igg", "cmv igm", "anti cmv", "anti-cmv igg", "anti-cmv igm"],
@@ -2333,7 +2333,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Interleucina-6 (IL-6)",
-    category: "Imunologia / Citocinas",
+    category: "Autoimunidade",
     description: "Citocina multifuncional produzida por macrófagos, células endoteliais e adipócitos que desempenha um papel duplo: atua como sinalizadora pró-inflamatória em processos crônicos e como moduladora de sobrevivência em regeneração celular. É o principal estímulo hepático para a produção da Proteína C-Reativa (PCR).",
     mostCommonBrazil: false,
     aliases: ["il6", "il-6", "interleucina 6", "dosagem de interleucina 6", "interleucina-6"],
@@ -2352,7 +2352,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
   },
   {
     canonicalName: "Zinco Eritrocitário",
-    category: "Nutrologia / Metais",
+    category: "Nutrientes",
     description: "Quantificação do mineral zinco presente no interior das células vermelhas do sangue (eritrócitos). Trata-se de uma análise muito mais sensível e clinicamente relevante para o mapeamento dos estoques reais do organismo do que o zinco sérico tradicional, refletindo a reserva intracelular de longo prazo e o suporte a mais de 300 enzimas metalodependentes.",
     mostCommonBrazil: false,
     aliases: ["zinco eritrocitario", "zinco intracelular", "dosagem de zinco eritrocitario", "zinco eritrocito"],

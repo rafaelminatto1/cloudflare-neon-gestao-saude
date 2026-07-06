@@ -399,7 +399,7 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
       </AnimatePresence>
 
       {/* 2. MAIN HEADER BAR */}
-      <header className="bg-slate-950 text-white px-4 h-14 flex items-center justify-between shadow-md shrink-0">
+      <header className="bg-slate-950/85 backdrop-blur-xl text-white px-4 h-14 flex items-center justify-between shadow-sm shrink-0 border-b border-white/10 z-10 sticky top-0">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
             <Activity size={18} className="stroke-[2.5]" />
@@ -439,13 +439,13 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
             className="p-4 space-y-4"
           >
             {/* Welcome banner */}
-            <div className="bg-slate-900 text-white rounded-3xl p-5 shadow-lg relative overflow-hidden">
+            <div className="gradient-dark text-white rounded-[24px] p-6 shadow-glow-primary relative overflow-hidden border border-slate-700/50">
               <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-10">
-                <Activity size={160} />
+                <Activity size={180} />
               </div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Boas-vindas</p>
-              <h2 className="text-xl font-black mt-0.5">Olá, {user?.displayName || 'Paciente'} 👋</h2>
-              <p className="text-xs text-slate-300 leading-relaxed mt-2.5">
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Boas-vindas</p>
+              <h2 className="text-2xl font-black mt-0.5 tracking-tight">Olá, {user?.displayName || 'Paciente'} 👋</h2>
+              <p className="text-xs text-slate-300/90 leading-relaxed mt-2.5 font-medium max-w-[85%]">
                 Seu ecossistema de saúde monitorado em tempo real por inteligência médica avançada.
               </p>
 
@@ -719,24 +719,34 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
 
             {/* Vertical Exam Ledger List */}
             {filteredExams.length === 0 ? (
-              <div className="bg-white rounded-3xl p-10 text-center border border-slate-201">
-                <FileText size={40} className="text-slate-300 mx-auto mb-2" />
-                <p className="text-xs font-bold text-slate-550">Nenhum exame encontrado para esse filtro.</p>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/60 backdrop-blur-xl rounded-3xl p-10 text-center border border-slate-200/60 shadow-sm">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                  <FileText size={32} className="text-slate-400" />
+                </div>
+                <p className="text-sm font-black text-slate-700 mb-1">Nenhum exame encontrado</p>
+                <p className="text-[11px] font-medium text-slate-500 mb-5 leading-relaxed">Tente alterar os filtros de busca ou verifique se os resultados já foram processados.</p>
                 <button 
                   onClick={() => { setCategoryFilter('Todas'); setSearchQuery(''); }}
-                  className="mt-3 text-xs text-teal-600 font-extrabold uppercase tracking-wide"
+                  className="px-5 py-2.5 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors border border-teal-200/50"
                 >
                   Limpar Filtros
                 </button>
-              </div>
+              </motion.div>
             ) : (
-              <div className="space-y-2">
-                {filteredExams.map((exam) => (
-                  <div 
-                    key={exam.id}
-                    onClick={() => { if (exam.id) window.location.hash = 'exam-' + exam.id; }}
-                    className="card-interactive p-3.5 flex items-center justify-between gap-3"
-                  >
+              <motion.div layout className="space-y-2.5 pb-6">
+                <AnimatePresence>
+                  {filteredExams.map((exam) => (
+                    <motion.div 
+                      key={exam.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => { if (exam.id) window.location.hash = 'exam-' + exam.id; }}
+                      className="card-interactive p-4 flex items-center justify-between gap-3 bg-white"
+                    >
                     <div className="overflow-hidden space-y-1">
                       <div className="flex items-center gap-1.5">
                         {(() => {
@@ -761,9 +771,10 @@ export default function MobileAppLayout({ onNavigate, signOut }: MobileAppLayout
                         {exam.interpretacao}
                       </span>
                     </div>
-                  </div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
             )}
           </motion.div>
         )}

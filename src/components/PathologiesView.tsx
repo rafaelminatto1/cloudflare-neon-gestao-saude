@@ -17,7 +17,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useData, useToast } from '../App';
-import { UserPathology } from '../data';
+import { UserPathology, formatScientificReferences, parseScientificReferences } from '../data';
 
 // Predefined set of pathologies requested by the user
 const PRESET_PATHOLOGIES = [
@@ -270,6 +270,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
   const [isCongenital, setIsCongenital] = useState(false);
   const [status, setStatus] = useState('Ativo');
   const [description, setDescription] = useState('');
+  const [scientificReferencesInput, setScientificReferencesInput] = useState('');
 
   const filteredUserPathologies = useMemo(() => {
     return userPathologies.filter(p => {
@@ -289,6 +290,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
     setIsCongenital(false);
     setStatus('Ativo');
     setDescription('');
+    setScientificReferencesInput('');
     setIsModalOpen(true);
   };
 
@@ -299,6 +301,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
     setIsCongenital(!!p.isCongenital);
     setStatus(p.status);
     setDescription(p.description || '');
+    setScientificReferencesInput(formatScientificReferences(p.scientificReferences));
     setIsModalOpen(true);
   };
 
@@ -321,6 +324,7 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
         dateDetected: isCongenital ? 'De Nascença' : dateDetected,
         status,
         description: description.trim() || undefined,
+        scientificReferences: parseScientificReferences(scientificReferencesInput),
         isCongenital
       });
 
@@ -726,6 +730,17 @@ export function PathologiesView({ initialFilter }: { initialFilter?: any }) {
                   className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 transition-all placeholder:text-slate-400 resize-none"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Referências científicas / artigos (Opcional)</label>
+                <textarea
+                  rows={4}
+                  placeholder="Insira um artigo por linha. Ex.: TSH and thyroid hormone reference | DOI: 10.xxxx"
+                  className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 transition-all placeholder:text-slate-400 resize-none"
+                  value={scientificReferencesInput}
+                  onChange={(e) => setScientificReferencesInput(e.target.value)}
                 />
               </div>
 

@@ -444,7 +444,7 @@ export function TimelineView() {
     if (activeFilters.exams) {
       filteredExamsList.forEach(exam => {
         // Only include major lab results of category SANGUE or other relevant markers
-        if (exam.categoria === 'SANGUE') {
+        if (exam.categoria && exam.categoria.toUpperCase() === 'SANGUE') {
           events.push({
             id: `exam-${exam.id}`,
             type: 'EXAM',

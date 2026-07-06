@@ -22,7 +22,7 @@ import {
   Info
 } from 'lucide-react';
 import { useData, useToast } from '../App';
-import { ContinuousMedication } from '../data';
+import { ContinuousMedication, formatScientificReferences, parseScientificReferences } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface DosageHistoryEntry {
@@ -303,6 +303,7 @@ export function MedicationsView() {
   // Custom metadata parsed fields inside form
   const [userNotes, setUserNotes] = useState('');
   const [sideEffects, setSideEffects] = useState('');
+  const [scientificReferencesInput, setScientificReferencesInput] = useState('');
   const [dosageHistory, setDosageHistory] = useState<DosageHistoryEntry[]>([]);
 
   // Subform local fields for registering dosage adjustments
@@ -328,6 +329,7 @@ export function MedicationsView() {
     const parsed = parseMedicationNotes(med.notes);
     setUserNotes(parsed.notes);
     setSideEffects(parsed.sideEffects);
+    setScientificReferencesInput(formatScientificReferences(med.scientificReferences));
     setDosageHistory(parsed.history);
 
     // Reset sub-form fields
@@ -352,6 +354,7 @@ export function MedicationsView() {
     setIsActive(true);
     setUserNotes('');
     setSideEffects('');
+    setScientificReferencesInput('');
     setDosageHistory([]);
 
     setNewLogDate(new Date().toISOString().split('T')[0]);
@@ -455,6 +458,7 @@ export function MedicationsView() {
         startDate,
         endDate: endDate || undefined,
         isActive,
+        scientificReferences: parseScientificReferences(scientificReferencesInput),
         notes: encodedNotes
       });
 

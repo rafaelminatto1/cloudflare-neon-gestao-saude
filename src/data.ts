@@ -59,6 +59,44 @@ export interface ExamOrder {
   createdAt?: any;
 }
 
+export interface ScientificReference {
+  id?: string;
+  title: string;
+  authors?: string;
+  year?: string;
+  doi?: string;
+  pmid?: string;
+  url?: string;
+  summary?: string;
+  evidenceLevel?: string;
+  sourceType?: string;
+}
+
+export function parseScientificReferences(raw?: string | ScientificReference[] | null): ScientificReference[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter(ref => !!ref?.title).map(ref => ({ ...ref, title: ref.title.trim() }));
+  }
+
+  return raw
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map((line, index) => ({
+      id: `ref_${index + 1}`,
+      title: line,
+    }));
+}
+
+export function formatScientificReferences(references?: ScientificReference[] | null): string {
+  return (references || [])
+    .map((ref) => {
+      const parts = [ref.title, ref.doi && `DOI: ${ref.doi}`, ref.pmid && `PMID: ${ref.pmid}`, ref.url && `URL: ${ref.url}`].filter(Boolean);
+      return parts.join(' | ');
+    })
+    .join('\n');
+}
+
 export type ExamCategory = 'SANGUE' | 'URINA' | 'FEZES' | 'IMAGEM' | 'LAUDO' | 'RELATÓRIO' | 'OUTROS' | 'LAB' | 'AVALIAÇÃO';
 
 export interface MedicalRecord {
@@ -80,9 +118,44 @@ export interface MedicalRecord {
   tags?: string;
   impactoAutoimune?: 'Alto' | 'Médio' | 'Baixo' | 'Nenhum';
   isManualCategory?: boolean;
+  scientificReferences?: ScientificReference[];
 }
 
-export function getAutoCategory(nomeExame: string, originalCategory?: string): ExamCategory {
+export interface UserPathology {
+  id: string;
+  condition: string;
+  dateDetected: string;
+  status: string;
+  description?: string;
+  userId: string;
+  createdAt?: any;
+  isCongenital?: boolean;
+  scientificReferences?: ScientificReference[];
+}
+
+export interface ContinuousMedication {
+  id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+  startDate: string;
+  endDate?: string;
+  isActive: boolean;
+  notes?: string;
+  userId: string;
+  createdAt?: any;
+  dosageHistory?: {
+    date: string;
+    dosage: string;
+    notes?: string;
+    sideEffects?: string;
+  }[];
+  sideEffects?: string;
+  _mergedIds?: string[];
+  scientificReferences?: ScientificReference[];
+}
+
+export function getAutoCategory(nomeExame: string, originalCategory?: string, scientificReferences?: ScientificReference[]): ExamCategory {
   const name = (nomeExame || '').toLowerCase().trim();
   const orig = (originalCategory || '').toUpperCase().trim();
 
@@ -99,6 +172,9 @@ export function getAutoCategory(nomeExame: string, originalCategory?: string): E
 
   const normName = normalize(name);
   const words = normName.split(' ').filter(Boolean);
+  const referenceText = (scientificReferences || [])
+    .map((ref) => `${ref.title || ''} ${ref.summary || ''} ${ref.url || ''} ${ref.doi || ''}`.toLowerCase())
+    .join(' ');
 
   const matchesKeyword = (kw: string): boolean => {
     const normKw = normalize(kw);
@@ -110,6 +186,21 @@ export function getAutoCategory(nomeExame: string, originalCategory?: string): E
     // For single word matching
     return words.includes(normKw);
   };
+
+  const referenceCategoryHints: Array<{ category: ExamCategory; terms: string[] }> = [
+    { category: 'SANGUE', terms: ['tsh','thyroid','hormone','hormonal','cortisol','estrogen','insulin','glucose','glycated','hemoglobin','ferritin','vitamin','b12','folate','cholesterol','lipid','homocysteine','prolactin','fsh','lh','pth','prl'] },
+    { category: 'IMAGEM', terms: ['mri','resonancia','tomography','ct','ultrasound','ultrassom','radiography','raio x','ray','ecg','eeg','mamography','doppler','endomoscopy','colonoscopy','espirometry'] },
+    { category: 'URINA', terms: ['urine','urina','eas','proteinuria','microalbuminuria'] },
+    { category: 'FEZES', terms: ['fezes','stool','copro','parasitological'] },
+    { category: 'LAUDO', terms: ['assessment','avaliacao','laudo','report','relatorio','neuropsychological'] },
+    { category: 'RELATÓRIO', terms: ['relatorio','atestado','declaracao','receita','pedido','encaminhamento','historico clinico','alta','evolucao'] }
+  ];
+  if (referenceText) {
+    const matchedReferenceCategory = referenceCategoryHints.find(({ terms }) => terms.some(term => referenceText.includes(term)));
+    if (matchedReferenceCategory) {
+      return matchedReferenceCategory.category;
+    }
+  }
 
   // 1. Image exams / Diagnostic tests mapping
   const imageKeywords = [

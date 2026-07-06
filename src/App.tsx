@@ -29,7 +29,7 @@ type FirebaseUser = any;
 import Markdown from 'react-markdown';
 import { QuickFiltersRow } from './components/QuickFiltersRow';
 import Select from 'react-select';
-import { EXAM_DATA, MedicalRecord, MedicalAppointment, UserPathology, ContinuousMedication, getExamGroup, getClinicalMetadata, Doctor, ExamOrder, getAutoCategory, parseFanResult, getFanPadraoDescricao, FanParsed, parseLipidMarker, getLipidPanelRisk, LipidParsed, parseTireoidePanel, parseHepaticoPanel, parseUrinalise, parseHemogramaPanel, getValuePercentage, parseRenalPanel, parseGlycemicPanel, parseMusclePanel, parseVitaminsPanel } from './data';
+import { EXAM_DATA, MedicalRecord, MedicalAppointment, UserPathology, ContinuousMedication, getExamGroup, getClinicalMetadata, Doctor, ExamOrder, getAutoCategory, parseFanResult, getFanPadraoDescricao, FanParsed, parseLipidMarker, getLipidPanelRisk, LipidParsed, parseTireoidePanel, parseHepaticoPanel, parseUrinalise, parseHemogramaPanel, getValuePercentage, parseRenalPanel, parseGlycemicPanel, parseMusclePanel, parseVitaminsPanel, formatScientificReferences, parseScientificReferences } from './data';
 import localforage from 'localforage';
 import jsPDF from 'jspdf';
 import { motion } from 'motion/react';
@@ -87,10 +87,10 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div className={`flex items-center gap-3 px-4.5 py-3 rounded-2xl shadow-xl text-xs font-semibold backdrop-blur-md transition-all duration-300 animate-slideInFromRight ${
-      toast.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400' :
-      toast.type === 'error' ? 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:bg-rose-950/20 dark:text-rose-450' :
-      'bg-slate-900/90 border border-slate-800 text-white dark:bg-slate-950/90'
+    <div className={`flex items-center gap-3 px-5 py-3.5 rounded-[24px] shadow-elevated text-xs font-bold backdrop-blur-2xl transition-all duration-300 animate-slideInFromTop ${
+      toast.type === 'success' ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' :
+      toast.type === 'error' ? 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:bg-rose-950/30 dark:text-rose-450' :
+      'bg-slate-900/85 border-slate-700/50 text-white dark:bg-slate-950/85'
     }`}>
       {toast.type === 'success' && <CheckCircle size={16} className="text-emerald-500 shrink-0" />}
       {toast.type === 'error' && <AlertTriangle size={16} className="text-rose-500 shrink-0" />}
@@ -122,7 +122,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm pointer-events-auto">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 w-full max-w-sm px-4 pointer-events-auto">
         {toasts.map(toast => (
           <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
         ))}
@@ -5516,7 +5516,10 @@ Tem certeza que deseja ZERAR todos os dados de exames para subi-los novamente?`)
 
   const handleEditExam = () => {
     if (selectedExam) {
-      setEditFormData(selectedExam);
+      setEditFormData({
+        ...selectedExam,
+        scientificReferences: selectedExam.scientificReferences || []
+      });
       setIsEditing(true);
     }
   };
@@ -7460,6 +7463,16 @@ Tem certeza que deseja ZERAR todos os dados de exames para subi-los novamente?`)
                         </select>
                       </div>
                     </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Referências científicas / artigos</label>
+                      <textarea
+                        rows={4}
+                        value={formatScientificReferences(editFormData.scientificReferences || [])}
+                        onChange={e => setEditFormData({...editFormData, scientificReferences: parseScientificReferences(e.target.value)})}
+                        placeholder="Insira um artigo por linha. Ex.: TSH and thyroid hormone reference | DOI: 10.xxxx"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white resize-none"
+                      />
+                    </div>
                     <div className="flex pt-4 mt-2 border-t border-slate-100"></div>
                       <button onClick={() => setIsEditing(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-600 bg-white hover:bg-slate-50">Cancelar</button>
                       <button onClick={handleSaveEdit} className="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-bold hover:bg-teal-700 shadow-sm shadow-teal-200">Salvar Alterações</button>
@@ -7533,6 +7546,21 @@ Tem certeza que deseja ZERAR todos os dados de exames para subi-los novamente?`)
                         <h4 className="text-sm font-bold text-slate-900 mb-2 border-b border-slate-100 pb-2">Valor de Referência</h4>
                         <div className="text-slate-600 text-sm bg-white p-3 rounded-xl border border-slate-100 shadow-sm font-mono text-center">
                           {selectedExam.valorReferencia}
+                        </div>
+                      </div>
+                    )}
+                    {(selectedExam.scientificReferences && selectedExam.scientificReferences.length > 0) && (
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 mb-2 border-b border-slate-100 pb-2">Referências científicas</h4>
+                        <div className="space-y-2 text-sm text-slate-600 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                          {selectedExam.scientificReferences.map((ref, idx) => (
+                            <div key={idx} className="text-xs leading-relaxed">
+                              <div className="font-semibold text-slate-800">{ref.title}</div>
+                              {ref.doi && <div>DOI: {ref.doi}</div>}
+                              {ref.pmid && <div>PMID: {ref.pmid}</div>}
+                              {ref.url && <div className="break-all">URL: {ref.url}</div>}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}

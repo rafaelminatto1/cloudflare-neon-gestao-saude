@@ -25,6 +25,7 @@ export const medicalRecords = pgTable('medical_records', {
   grupoSistemico: varchar('grupo_sistemico', { length: 255 }),
   tags: text('tags'),
   impactoAutoimune: varchar('impacto_autoimune', { length: 50 }),
+  scientificReferences: json('scientific_references'),
   isManualCategory: boolean('is_manual_category').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
@@ -54,6 +55,7 @@ export const userPathologies = pgTable('user_pathologies', {
   dateDetected: varchar('date_detected', { length: 50 }).notNull(),
   status: varchar('status', { length: 100 }).notNull(),
   description: text('description'),
+  scientificReferences: json('scientific_references'),
   isCongenital: boolean('is_congenital').default(false),
   createdAt: timestamp('created_at').defaultNow(),
 });
@@ -69,6 +71,7 @@ export const continuousMedications = pgTable('continuous_medications', {
   isActive: boolean('is_active').default(true),
   notes: text('notes'),
   sideEffects: text('side_effects'),
+  scientificReferences: json('scientific_references'),
   dosageHistory: json('dosage_history'), // store as JSON string array
   createdAt: timestamp('created_at').defaultNow(),
 });

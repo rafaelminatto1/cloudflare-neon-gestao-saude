@@ -97,5 +97,10 @@ describe('Validation and Processing tests', () => {
       expect(getAutoCategory('EAS')).toBe('URINA');
       expect(getAutoCategory('Exame Parasitológico de Fezes')).toBe('FEZES');
     });
+
+    it('should use scientific references as evidence for classification', () => {
+      expect(getAutoCategory('Exame de rotina', undefined, [{ title: 'TSH and thyroid hormone reference' }])).toBe('SANGUE');
+      expect(getAutoCategory('Exame de rotina', undefined, [{ title: 'MRI of the knee for musculoskeletal injury' }])).toBe('IMAGEM');
+    });
   });
 });
