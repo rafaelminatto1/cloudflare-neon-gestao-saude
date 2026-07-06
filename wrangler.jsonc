@@ -62,5 +62,20 @@
 			"binding": "HYPERDRIVE",
 			"id": "80d5450c191d45b68da284c3bda78dc3"
 		}
-	]
+	],
+	"queues": {
+		"producers": [
+			{
+				"queue": "gestao-saude-pdf-queue",
+				"binding": "PDF_PROCESS_QUEUE"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "gestao-saude-pdf-queue",
+				"max_batch_size": 1,
+				"max_batch_timeout": 5
+			}
+		]
+	}
 }

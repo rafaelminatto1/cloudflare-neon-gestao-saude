@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
-import { extractText } from 'unpdf';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -15,6 +14,7 @@ type Bindings = {
   VECTOR_INDEX: VectorizeIndex;
   GESTAO_SAUDE_KV: KVNamespace;
   HYPERDRIVE: Hyperdrive;
+  PDF_PROCESS_QUEUE: any;
 };
 
 const app = new Hono<{ Bindings: Bindings, Variables: { userId: string } }>();
@@ -64,88 +64,37 @@ app.post('/api/parse-pdf', async (c) => {
     
     if (!file || !userId) return c.json({ error: 'Arquivo ou userId não fornecido' }, 400);
 
-    // Save to R2
     const fileId = generateId();
     const pdfStoragePath = `exams/${userId}/${fileId}.pdf`;
     
-    // Convert to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     
-    // 1. Upload to R2 Bucket
     await c.env.R2_BUCKET.put(pdfStoragePath, arrayBuffer, {
       httpMetadata: { contentType: 'application/pdf' },
       customMetadata: { userId }
     });
 
-    // 2. Extract Text
-    const pdfData = new Uint8Array(arrayBuffer);
-    const textData = await extractText(pdfData);
-    const pdfTextStr = Array.isArray(textData.text) ? textData.text.join('\n') : String(textData.text);
-    const truncatedText = pdfTextStr.substring(0, 5000); // Llama context limit
-
-    // 3. Generate Vector Embeddings (RAG)
-    try {
-      const embeddingResponse = await c.env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [truncatedText] });
-      const vector = embeddingResponse.data[0];
-      
-      await c.env.VECTOR_INDEX.upsert([
-        {
-          id: fileId,
-          values: vector,
-          metadata: { userId, path: pdfStoragePath, type: 'exam_pdf' }
-        }
-      ]);
-      await c.env.GESTAO_SAUDE_KV.put(`doc:${fileId}`, truncatedText);
-    } catch (vectorErr) {
-      console.error("Vectorize insertion error, continuing without RAG:", vectorErr);
-    }
-
-    // 4. Extract Structured JSON Data with LLaMA
-    const messages = [
-      { role: 'system', content: 'Você é um assistente médico especializado na leitura de laudos e exames. Retorne APENAS um JSON estruturado, sem blocos de markdown e sem texto adicional.' },
-      { role: 'user', content: `Extraia as informações do exame abaixo e retorne APENAS um JSON válido contendo um array 'exames' (se for sangue/urina/fezes/imagem) ou 'avaliacoes' (se for laudo/parecer). Formato do array exames: [{ dataExame: string, categoria: string (USE APENAS: Autoimunidade, Coração, Eletrólitos, Exames de Imagem, Fígado, Gastroenterologia, Hormônios, Infectologia, Marcadores Celulares Integrados, Metabolismo, Nutrientes, Pâncreas, Rins, Sangue, Saúde Feminina, Saúde Masculina, Tireoide, Toxicologia), nomeExame: string, resultado: string, unidade: string, valorReferencia: string, interpretacao: string, medicoSolicitante: string, arquivoOrigem: string, especialidadeMedica: string, grupoSistemico: string, tags: string, impactoAutoimune: string }]. Se laudo: [{ date: string, type: string, text: string }].\n\nArquivo Origem Nome: ${file.name}\nTexto do PDF:\n${truncatedText}` }
-    ];
-
-    const aiResponse = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
-      gateway: {
-        id: "gestao-saude-gateway"
-      }
+    await c.env.PDF_PROCESS_QUEUE.send({
+      userId,
+      fileId,
+      pdfStoragePath,
+      fileName: file.name
     });
-    const rawAiResponse = (aiResponse as { response: string }).response;
-    
-    // Parse JSON
-    let parsedJson: any = { exams: [] };
-    try {
-      const match = rawAiResponse.match(/\{[\s\S]*\}/);
-      if (match) {
-        parsedJson = JSON.parse(match[0]);
-      } else {
-        parsedJson = JSON.parse(rawAiResponse);
-      }
-      
-      // Handle the case where the AI returns "exames" instead of "exams"
-      if (parsedJson.exames && !parsedJson.exams) {
-         parsedJson.exams = parsedJson.exames;
-         delete parsedJson.exames;
-      }
-      if (parsedJson.avaliacoes && !parsedJson.exams) {
-         parsedJson.exams = parsedJson.avaliacoes;
-      }
-    } catch (e) {
-      console.error("Failed to parse AI response as JSON:", rawAiResponse);
-      return c.json({ error: 'Falha na extração de dados JSON', raw: rawAiResponse }, 500);
-    }
-    
-    // Inject storage path into each extracted item
-    if (parsedJson.exams) {
-      parsedJson.exams = parsedJson.exams.map((ex: any) => ({ ...ex, pdfStoragePath }));
-    }
-    
-    return c.json(parsedJson);
+
+    await c.env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'processing' }));
+
+    return c.json({ success: true, taskId: fileId, status: 'processing' });
   } catch (err: any) {
     console.error("Error parsing PDF:", err);
     return c.json({ error: err.message }, 500);
   }
+});
+
+app.get('/api/task-status/:taskId', async (c) => {
+  const jobId = c.req.param('taskId');
+  const jobData = await c.env.GESTAO_SAUDE_KV.get(`job:${jobId}`);
+  if (!jobData) return c.json({ status: 'unknown' });
+  return c.json(JSON.parse(jobData));
 });
 
 // GET File from R2
@@ -496,4 +445,76 @@ app.get('/api/all-data/:userId', async (c) => {
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async queue(batch: any, env: Bindings) {
+    for (let message of batch.messages) {
+      const { userId, fileId, pdfStoragePath, fileName } = message.body;
+      
+      try {
+        const object = await env.R2_BUCKET.get(pdfStoragePath);
+        if (!object) throw new Error("File not found in R2");
+        const arrayBuffer = await object.arrayBuffer();
+        
+        const pdfData = new Uint8Array(arrayBuffer);
+        const { extractText } = await import('unpdf');
+        const textData = await extractText(pdfData);
+        const pdfTextStr = Array.isArray(textData.text) ? textData.text.join('\n') : String(textData.text);
+        const truncatedText = pdfTextStr.substring(0, 5000);
+
+        try {
+          const embeddingResponse = await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [truncatedText] });
+          const vector = embeddingResponse.data[0];
+          
+          await env.VECTOR_INDEX.upsert([
+            {
+              id: fileId,
+              values: vector,
+              metadata: { userId, path: pdfStoragePath, type: 'exam_pdf' }
+            }
+          ]);
+          await env.GESTAO_SAUDE_KV.put(`doc:${fileId}`, truncatedText);
+        } catch (vectorErr) {
+          console.error("Vectorize insertion error:", vectorErr);
+        }
+
+        const messages = [
+          { role: 'system', content: 'Você é um assistente médico especializado na leitura de laudos e exames. Retorne APENAS um JSON estruturado, sem blocos de markdown e sem texto adicional.' },
+          { role: 'user', content: `Extraia as informações do exame abaixo e retorne APENAS um JSON válido contendo um array 'exames' (se for sangue/urina/fezes/imagem) ou 'avaliacoes' (se for laudo/parecer). Formato do array exames: [{ dataExame: string, categoria: string (USE APENAS: Autoimunidade, Coração, Eletrólitos, Exames de Imagem, Fígado, Gastroenterologia, Hormônios, Infectologia, Marcadores Celulares Integrados, Metabolismo, Nutrientes, Pâncreas, Rins, Sangue, Saúde Feminina, Saúde Masculina, Tireoide, Toxicologia), nomeExame: string, resultado: string, unidade: string, valorReferencia: string, interpretacao: string, medicoSolicitante: string, arquivoOrigem: string, especialidadeMedica: string, grupoSistemico: string, tags: string, impactoAutoimune: string }]. Se laudo: [{ date: string, type: string, text: string }].\n\nArquivo Origem Nome: ${fileName}\nTexto do PDF:\n${truncatedText}` }
+        ];
+
+        const aiResponse = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
+          gateway: {
+            id: "gestao-saude-gateway"
+          }
+        });
+        const rawAiResponse = (aiResponse as { response: string }).response;
+        
+        let parsedJson: any = { exams: [] };
+        try {
+          const match = rawAiResponse.match(/\{[\s\S]*\}/);
+          if (match) {
+            parsedJson = JSON.parse(match[0]);
+          } else {
+            parsedJson = JSON.parse(rawAiResponse);
+          }
+          if (parsedJson.exames && !parsedJson.exams) parsedJson.exams = parsedJson.exames;
+          if (parsedJson.avaliacoes && !parsedJson.exams) parsedJson.exams = parsedJson.avaliacoes;
+        } catch (e) {
+           await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'error', error: 'Falha na extração de dados JSON' }));
+           continue;
+        }
+        
+        if (parsedJson.exams) {
+          parsedJson.exams = parsedJson.exams.map((ex: any) => ({ ...ex, pdfStoragePath }));
+        }
+
+        await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: parsedJson.exams }));
+        
+      } catch (err: any) {
+         await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'error', error: err.message }));
+      }
+    }
+  }
+};
+
