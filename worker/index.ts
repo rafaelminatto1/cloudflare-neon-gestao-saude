@@ -375,7 +375,7 @@ app.post('/api/appointments', async (c) => {
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/appointments/:id', async (c) => {
-  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.medicalAppointments).where(and(eq(schema.medicalAppointments.id, c.req.param('id')), eq(schema.medicalAppointments.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.medicalAppointments).where(and(eq(schema.medicalAppointments.id, c.req.param('id')), eq(schema.medicalAppointments.userId, userId))); await invalidateCache(c, userId); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/pathologies', async (c) => {
@@ -390,7 +390,7 @@ app.post('/api/pathologies', async (c) => {
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/pathologies/:id', async (c) => {
-  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.userPathologies).where(and(eq(schema.userPathologies.id, c.req.param('id')), eq(schema.userPathologies.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.userPathologies).where(and(eq(schema.userPathologies.id, c.req.param('id')), eq(schema.userPathologies.userId, userId))); await invalidateCache(c, userId); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/medications', async (c) => {
@@ -405,7 +405,7 @@ app.post('/api/medications', async (c) => {
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/medications/:id', async (c) => {
-  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.continuousMedications).where(and(eq(schema.continuousMedications.id, c.req.param('id')), eq(schema.continuousMedications.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.continuousMedications).where(and(eq(schema.continuousMedications.id, c.req.param('id')), eq(schema.continuousMedications.userId, userId))); await invalidateCache(c, userId); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/exam-orders', async (c) => {
@@ -420,7 +420,7 @@ app.post('/api/exam-orders', async (c) => {
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/exam-orders/:id', async (c) => {
-  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.examOrders).where(and(eq(schema.examOrders.id, c.req.param('id')), eq(schema.examOrders.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.examOrders).where(and(eq(schema.examOrders.id, c.req.param('id')), eq(schema.examOrders.userId, userId))); await invalidateCache(c, userId); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.post('/api/timeline-events', async (c) => {
@@ -435,7 +435,7 @@ app.post('/api/timeline-events', async (c) => {
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 app.delete('/api/timeline-events/:id', async (c) => {
-  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.customTimelineEvents).where(and(eq(schema.customTimelineEvents.id, c.req.param('id')), eq(schema.customTimelineEvents.userId, userId))); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
+  try { const db = getDb(c); const userId = getScopedUserId(c); await db.delete(schema.customTimelineEvents).where(and(eq(schema.customTimelineEvents.id, c.req.param('id')), eq(schema.customTimelineEvents.userId, userId))); await invalidateCache(c, userId); return c.json({ success: true }); } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
 app.get('/api/all-data/:userId', async (c) => {
