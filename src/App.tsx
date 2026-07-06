@@ -5343,6 +5343,7 @@ export function ExamsList({ initialFilter, onNavigate }: { initialFilter?: any, 
   const { processedExams, user } = useData();
   const { addToast } = useToast();
   const [searchTerm, setSearchTerm] = useState(initialFilter?.searchTerm || '');
+  const [isGroupedView, setIsGroupedView] = useState(false);
   const [startDate, setStartDate] = useState(initialFilter?.startDate || '');
   const [endDate, setEndDate] = useState(initialFilter?.endDate || '');
   const [categoryFilter, setCategoryFilter] = useState(initialFilter?.category || 'Todas');
@@ -5669,6 +5670,7 @@ Tem certeza que deseja ZERAR todos os dados de exames para subi-los novamente?`)
   }, [searchTerm, startDate, endDate, categoryFilter, interpFilter, specialtyFilter, systemFilter, sortConfig, processedExams]);
 
   const groupedExams = useMemo(() => {
+    if (!isGroupedView) return filteredExams;
     const result: (MedicalRecord & { isGroup?: boolean; subExams?: MedicalRecord[] })[] = [];
     const hemogramaGroups: Record<string, any> = {};
     const fanGroups: Record<string, any> = {};
@@ -6003,7 +6005,7 @@ Tem certeza que deseja ZERAR todos os dados de exames para subi-los novamente?`)
     });
 
     return result;
-  }, [filteredExams]);
+  }, [filteredExams, isGroupedView]);
 
   const totalPages = Math.ceil(groupedExams.length / itemsPerPage);
   const currentItems = groupedExams.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -6723,6 +6725,14 @@ Tem certeza que deseja ZERAR todos os dados de exames para subi-los novamente?`)
           >
             <Printer size={18} />
             Imprimir
+          </button>
+          <button 
+            onClick={() => setIsGroupedView(!isGroupedView)}
+            className={`flex items-center justify-center gap-2 border px-4 py-2 rounded-xl font-semibold transition-colors shadow-sm ${isGroupedView ? 'bg-teal-600 text-white border-teal-600 hover:bg-teal-700' : 'bg-white border-slate-200 text-slate-600 hover:border-teal-300 hover:text-teal-700 hover:bg-teal-50'}`}
+            title="Agrupar exames por painel clínico (ex: Hemograma, Lipidograma)"
+          >
+            <LayoutGrid size={18} />
+            {isGroupedView ? 'Modo Lista' : 'Painéis'}
           </button>
         </div>
       </header>
