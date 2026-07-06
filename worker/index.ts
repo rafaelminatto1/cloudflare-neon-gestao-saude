@@ -149,15 +149,17 @@ app.post('/api/rag-chat', async (c) => {
 
     // Return SSE Stream
     return streamSSE(c, async (stream) => {
-       const aiResponse = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { 
-         messages, 
-         max_tokens: 4096, 
-         stream: true 
-       }, {
-         gateway: {
-           id: "gestao-saude-gateway"
-         }
-       }) as AsyncGenerator<any>;
+       let aiResponse;
+       try {
+         aiResponse = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096, stream: true }, {
+           gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+         }) as AsyncGenerator<any>;
+       } catch (e) {
+         console.warn("LLaMA 70b failed for chat, trying 8b fallback", e);
+         aiResponse = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages, max_tokens: 4096, stream: true }, {
+           gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+         }) as AsyncGenerator<any>;
+       }
        
        for await (const chunk of aiResponse) {
           if (chunk.response) {
@@ -175,6 +177,13 @@ app.post('/api/rag-chat', async (c) => {
 const getDb = (c: any) => {
   const sql = postgres(c.env.HYPERDRIVE.connectionString);
   return drizzle(sql, { schema });
+};
+
+
+const invalidateCache = async (c: any, userId: string) => {
+  try {
+    await c.env.GESTAO_SAUDE_KV.delete(`cache:alldata:${userId}`);
+  } catch(e) { console.error("Cache invalidation failed", e); }
 };
 
 const getScopedUserId = (c: any, requestedUserId?: string) => {
@@ -238,6 +247,7 @@ app.post('/api/save-exams', async (c) => {
     }));
 
     await db.insert(schema.medicalRecords).values(values);
+    await invalidateCache(c, userId);
     return c.json({ success: true, count: values.length });
   } catch (err: any) {
     console.error('Error saving exams:', err);
@@ -250,6 +260,7 @@ app.delete('/api/exams/:id', async (c) => {
     const db = getDb(c);
     const userId = getScopedUserId(c);
     await db.delete(schema.medicalRecords).where(and(eq(schema.medicalRecords.id, c.req.param('id')), eq(schema.medicalRecords.userId, userId)));
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -261,6 +272,7 @@ app.put('/api/exams/:id', async (c) => {
     const userId = getScopedUserId(c, updates.userId);
     const { userId: _ignoredUserId, ...safeUpdates } = updates;
     await db.update(schema.medicalRecords).set({ ...safeUpdates, updatedAt: new Date() }).where(and(eq(schema.medicalRecords.id, c.req.param('id')), eq(schema.medicalRecords.userId, userId)));
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -272,6 +284,7 @@ app.post('/api/delete-exams-batch', async (c) => {
     const db = getDb(c);
     const userId = getScopedUserId(c, requestedUserId);
     await db.delete(schema.medicalRecords).where(and(inArray(schema.medicalRecords.id, examIds), eq(schema.medicalRecords.userId, userId)));
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -283,6 +296,7 @@ app.post('/api/rename-source', async (c) => {
     const db = getDb(c);
     const userId = getScopedUserId(c, requestedUserId);
     await db.update(schema.medicalRecords).set({ arquivoOrigem: newSourceName }).where(and(inArray(schema.medicalRecords.id, examIds), eq(schema.medicalRecords.userId, userId)));
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -304,6 +318,7 @@ app.post('/api/doctors', async (c) => {
       createdAt: new Date(),
     };
     await db.insert(schema.doctors).values(values);
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -313,6 +328,7 @@ app.delete('/api/doctors/:id', async (c) => {
     const db = getDb(c);
     const userId = getScopedUserId(c);
     await db.delete(schema.doctors).where(and(eq(schema.doctors.id, c.req.param('id')), eq(schema.doctors.userId, userId)));
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -354,6 +370,7 @@ app.post('/api/appointments', async (c) => {
     const db = getDb(c);
     await ensureUser(db, userId);
     await db.insert(schema.medicalAppointments).values({ ...appointment, id: appointment.id || generateId(), userId, createdAt: new Date() });
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -368,6 +385,7 @@ app.post('/api/pathologies', async (c) => {
     const db = getDb(c);
     await ensureUser(db, userId);
     await db.insert(schema.userPathologies).values({ ...pathology, id: pathology.id || generateId(), userId, createdAt: new Date() });
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -382,6 +400,7 @@ app.post('/api/medications', async (c) => {
     const db = getDb(c);
     await ensureUser(db, userId);
     await db.insert(schema.continuousMedications).values({ ...medication, id: medication.id || generateId(), userId, createdAt: new Date() });
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -396,6 +415,7 @@ app.post('/api/exam-orders', async (c) => {
     const db = getDb(c);
     await ensureUser(db, userId);
     await db.insert(schema.examOrders).values({ ...examOrder, id: examOrder.id || generateId(), userId, createdAt: new Date() });
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -410,6 +430,7 @@ app.post('/api/timeline-events', async (c) => {
     const db = getDb(c);
     await ensureUser(db, userId);
     await db.insert(schema.customTimelineEvents).values({ ...event, id: event.id || generateId(), userId, createdAt: new Date() });
+    await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
@@ -419,9 +440,16 @@ app.delete('/api/timeline-events/:id', async (c) => {
 
 app.get('/api/all-data/:userId', async (c) => {
   try {
-    const db = getDb(c);
     const requestedUserId = c.req.param('userId');
     const userId = getScopedUserId(c, requestedUserId);
+    
+    // Check KV Cache First
+    const cachedData = await c.env.GESTAO_SAUDE_KV.get(`cache:alldata:${userId}`);
+    if (cachedData) {
+      return c.json(JSON.parse(cachedData));
+    }
+
+    const db = getDb(c);
     const [
       records, appointments, pathologies, medications, orders, events, docs
     ] = await Promise.all([
@@ -433,7 +461,8 @@ app.get('/api/all-data/:userId', async (c) => {
       db.select().from(schema.customTimelineEvents).where(eq(schema.customTimelineEvents.userId, userId)),
       db.select().from(schema.doctors).where(eq(schema.doctors.userId, userId)),
     ]);
-    return c.json({
+    
+    const responseData = {
       exams: records,
       appointments,
       pathologies,
@@ -441,7 +470,12 @@ app.get('/api/all-data/:userId', async (c) => {
       examOrders: orders,
       timelineEvents: events,
       doctors: docs
-    });
+    };
+
+    // Save to KV Cache (expires in 1 hour if not invalidated manually)
+    await c.env.GESTAO_SAUDE_KV.put(`cache:alldata:${userId}`, JSON.stringify(responseData), { expirationTtl: 3600 });
+
+    return c.json(responseData);
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
@@ -483,11 +517,17 @@ export default {
           { role: 'user', content: `Extraia as informações do exame abaixo e retorne APENAS um JSON válido contendo um array 'exames' (se for sangue/urina/fezes/imagem) ou 'avaliacoes' (se for laudo/parecer). Formato do array exames: [{ dataExame: string, categoria: string (USE APENAS: Autoimunidade, Coração, Eletrólitos, Exames de Imagem, Fígado, Gastroenterologia, Hormônios, Infectologia, Marcadores Celulares Integrados, Metabolismo, Nutrientes, Pâncreas, Rins, Sangue, Saúde Feminina, Saúde Masculina, Tireoide, Toxicologia), nomeExame: string, resultado: string, unidade: string, valorReferencia: string, interpretacao: string, medicoSolicitante: string, arquivoOrigem: string, especialidadeMedica: string, grupoSistemico: string, tags: string, impactoAutoimune: string }]. Se laudo: [{ date: string, type: string, text: string }].\n\nArquivo Origem Nome: ${fileName}\nTexto do PDF:\n${truncatedText}` }
         ];
 
-        const aiResponse = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
-          gateway: {
-            id: "gestao-saude-gateway"
-          }
-        });
+        let aiResponse;
+        try {
+          aiResponse = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
+            gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+          });
+        } catch (e) {
+          console.warn("LLaMA 70b failed, trying 8b fallback", e);
+          aiResponse = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages, max_tokens: 4096 }, {
+            gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+          });
+        }
         const rawAiResponse = (aiResponse as { response: string }).response;
         
         let parsedJson: any = { exams: [] };
