@@ -1132,11 +1132,67 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
     category: "Fígado",
     description: "Mensuração de subprodutos abundantes do catabolismo do grupo heme de hemácias envelhecidas degradadas, divididos em Bilirrubina Direta (conjugada pelo fígado) e Bilirrubina Indireta (livre circulante). Essencial na investigação de icterícia, anemias hemolíticas e obstruções biliares.",
     mostCommonBrazil: true,
-    aliases: ["bilirrubinas", "bilirrubina total e fracoes", "bilirrubina direta", "bilirrubina indireta", "bilirrubina total", "dosagem de bilirrubinas"],
+    aliases: ["bilirrubinas", "bilirrubina total e fracoes", "dosagem de bilirrubinas"],
     labExamples: [
       { lab: "Fleury", label: "BILIRRUBINAS (TOTAL E FRACOES) SANGUE" },
       { lab: "Delboni", label: "BILIRRUBINA COMPLETA SANGUE" }
     ]
+  },
+  {
+    canonicalName: "Bilirrubina Total",
+    category: "Fígado",
+    description: "Mensuração de bilirrubina total na corrente sanguínea.",
+    mostCommonBrazil: true,
+    aliases: ["bilirrubina total"],
+    labExamples: [{ lab: "Fleury", label: "BILIRRUBINA TOTAL" }]
+  },
+  {
+    canonicalName: "Bilirrubina Direta",
+    category: "Fígado",
+    description: "Fração conjugada da bilirrubina, já processada pelo fígado.",
+    mostCommonBrazil: true,
+    aliases: ["bilirrubina direta"],
+    labExamples: [{ lab: "Fleury", label: "BILIRRUBINA DIRETA" }]
+  },
+  {
+    canonicalName: "Bilirrubina Indireta",
+    category: "Fígado",
+    description: "Fração livre da bilirrubina circulante antes da metabolização hepática.",
+    mostCommonBrazil: true,
+    aliases: ["bilirrubina indireta"],
+    labExamples: [{ lab: "Fleury", label: "BILIRRUBINA INDIRETA" }]
+  },
+  {
+    canonicalName: "Proteínas Totais",
+    category: "Metabolismo",
+    description: "Soma de todas as proteínas circulantes no sangue (predominantemente Albumina e Globulinas). Avalia o estado nutricional geral e funções hepática e renal.",
+    mostCommonBrazil: true,
+    aliases: ["proteinas totais", "dosagem de proteinas totais"],
+    labExamples: [{ lab: "Fleury", label: "PROTEÍNAS TOTAIS" }]
+  },
+  {
+    canonicalName: "Globulina",
+    category: "Metabolismo",
+    description: "Fração de proteínas séricas que inclui imunoglobulinas e proteínas de fase aguda.",
+    mostCommonBrazil: true,
+    aliases: ["globulina", "globulinas"],
+    labExamples: [{ lab: "Fleury", label: "GLOBULINA SÉRICA" }]
+  },
+  {
+    canonicalName: "c-ANCA (Padrão Citoplasmático)",
+    category: "Autoimunidade",
+    description: "Anticorpo anticitoplasma de neutrófilos com padrão citoplasmático (c-ANCA). Altamente associado à Granulomatose com Poliangiite (GPA, antiga Wegener), visando a enzima proteinase 3 (PR3).",
+    mostCommonBrazil: false,
+    aliases: ["c-anca", "canca", "anca padrao citoplasmatico"],
+    labExamples: [{ lab: "Fleury", label: "ANTICORPOS ANTICITOPLASMA DE NEUTROFILOS - c-ANCA" }]
+  },
+  {
+    canonicalName: "p-ANCA (Padrão Perinuclear)",
+    category: "Autoimunidade",
+    description: "Anticorpo anticitoplasma de neutrófilos com padrão perinuclear (p-ANCA). Associado frequentemente a Poliangiite Microscópica, Síndrome de Churg-Strauss e Colite Ulcerativa, visando a enzima mieloperoxidase (MPO).",
+    mostCommonBrazil: false,
+    aliases: ["p-anca", "panca", "anca padrao perinuclear"],
+    labExamples: [{ lab: "Fleury", label: "ANTICORPOS ANTICITOPLASMA DE NEUTROFILOS - p-ANCA" }]
   },
   {
     canonicalName: "Beta HCG Quantitativo",
@@ -1863,28 +1919,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
       { lab: "Delboni", label: "ANTI BETA-2-GLICOPROTEINA I (IGG/IGM)" }
     ]
   },
-  {
-    canonicalName: "Anticorpo Anti-Tireoperoxidase (Anti-TPO)",
-    category: "Tireoide",
-    description: "Autoanticorpo direcionado contra a principal enzima envolvida na síntese de hormônios tireoidianos. É o marcador mais sensível para o diagnóstico de Doenças Autoimunes da Tireoide, destacando-se na Tireoidite de Hashimoto.",
-    mostCommonBrazil: true,
-    aliases: ["anti tpo", "anti-tpo", "antitpo", "anti tireoperoxidase", "anticorpo anti peroxidase tireoidiana", "peroxidase tireoidiana"],
-    labExamples: [
-      { lab: "Fleury", label: "ANTICORPOS ANTI-PEROXIDASE TIREOIDIANA (ANTI-TPO)" },
-      { lab: "a+", label: "ANTI-TPO (ANTICORPOS ANTI-PEROXIDASE TIREOIDIANA)" }
-    ]
-  },
-  {
-    canonicalName: "Anticorpo Anti-Tireoglobulina (Anti-TG)",
-    category: "Tireoide",
-    description: "Autoanticorpo direcionado contra a proteína tireoglobulina, a reserva molecular de tireóide. Avaliado em conjunto com o anti-TPO no diagnóstico de Hashimoto e no pós-trataamento de neoplasia diferenciada de tireóide.",
-    mostCommonBrazil: false,
-    aliases: ["anti tg", "anti-tg", "antitg", "anti tireoglobulina", "anticorpo anti tireoglobulina"],
-    labExamples: [
-      { lab: "Fleury", label: "ANTICORPOS ANTI-TIREOGLOBULINA" },
-      { lab: "CDB", label: "ANTI-TIREOGLOBULINA, SORO" }
-    ]
-  },
+
   {
     canonicalName: "Antiestreptolisina O (ASLO)",
     category: "Autoimunidade",
@@ -2375,34 +2410,41 @@ export function normalizeAndMatchExam(rawName: string): string {
   if (!rawName) return "";
   const clean = rawName.trim().replace(/\s+/g, ' ');
   const norm = clean.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const normClean = norm.replace(/[-_()/\\+,.:;]/g, ' ');
+  const normClean = norm.replace(/[-_()/\\+,.:;]/g, ' ').trim();
 
-  // 1st Priority: Match exact dictionary items aliases
+  // 1st Priority: Match exact dictionary items canonical names or aliases
   for (const item of EXAM_GLOSSARY) {
     if (rawName.toLowerCase() === item.canonicalName.toLowerCase()) {
       return item.canonicalName;
     }
     for (const alias of item.aliases) {
-      if (normClean === alias || normClean.includes(" " + alias + " ") || normClean.startsWith(alias + " ") || normClean.endsWith(" " + alias)) {
+      if (normClean === alias) {
+        return item.canonicalName;
+      }
+    }
+  }
+
+  // 2nd Priority: Hardcoded overrides for common tricky terms like Colesterol fractions
+  const words = normClean.split(/\s+/).filter(Boolean);
+  if (words.includes('colesterol') || words.includes('cholesterol')) {
+    if (words.includes('hdl')) return 'HDL - Colesterol';
+    if (words.includes('ldl')) return 'LDL - Colesterol';
+    if (words.includes('vldl')) return 'VLDL - Colesterol';
+    if (words.includes('nao') && words.includes('hdl')) return 'Colesterol Não-HDL';
+    if (words.includes('total') || words.includes('totais')) return 'Colesterol Total';
+  }
+
+  // 3rd Priority: Partial alias matching
+  for (const item of EXAM_GLOSSARY) {
+    for (const alias of item.aliases) {
+      if (normClean.includes(" " + alias + " ") || normClean.startsWith(alias + " ") || normClean.endsWith(" " + alias)) {
         return item.canonicalName;
       }
     }
   }
 
   // Fallback to simpler keyword checking to bypass specific structures
-  const words = normClean.split(/\s+/).filter(Boolean);
 
-  // Colesteróis Direct Matches
-  if (words.includes('colesterol') || words.includes('cholesterol')) {
-    if (words.includes('hdl')) return 'HDL - Colesterol';
-    if (words.includes('ldl')) return 'LDL - Colesterol';
-    if (words.includes('vldl')) return 'VLDL - Colesterol';
-    if (words.includes('total') || words.includes('totais')) return 'Colesterol Total';
-    return 'Colesterol Total';
-  }
-  if (words.includes('hdl')) return 'HDL - Colesterol';
-  if (words.includes('ldl')) return 'LDL - Colesterol';
-  if (words.includes('vldl')) return 'VLDL - Colesterol';
 
   // Triglicérides Direct Matches
   if (normClean.includes('triglicerid') || normClean.includes('trigliceri')) {
@@ -2463,7 +2505,13 @@ export function normalizeAndMatchExam(rawName: string): string {
   if (normClean.includes('hla b27') || words.includes('hlab27') || normClean.includes('antigeno hla')) {
     return 'Antígeno HLA-B27';
   }
-  if (normClean.includes('anca') || normClean.includes('anticitoplasma de neutrofilo') || words.includes('panca') || words.includes('canca')) {
+  if (normClean.includes('c-anca') || words.includes('canca') || normClean.includes('padrao citoplasmatico')) {
+    return 'c-ANCA (Padrão Citoplasmático)';
+  }
+  if (normClean.includes('p-anca') || words.includes('panca') || normClean.includes('padrao perinuclear')) {
+    return 'p-ANCA (Padrão Perinuclear)';
+  }
+  if (normClean.includes('anca') || normClean.includes('anticitoplasma de neutrofilo')) {
     return 'ANCA (Anticorpos Anticitoplasma de Neutrófilos)';
   }
   if (normClean.includes('scl 70') || normClean.includes('scl70') || normClean.includes('topoisomerase')) {
@@ -2710,6 +2758,26 @@ export function normalizeAndMatchExam(rawName: string): string {
   if (normClean.includes('renina') || words.includes('arp')) {
     return 'Atividade de Renina Plasmática (ARP)';
   }
+  if (normClean.includes('anti tpo') || normClean.includes('antitpo') || normClean.includes('peroxidase tireoidiana')) {
+    return 'Anticorpos Anti-Peroxidase Tireoidiana (Anti-TPO)';
+  }
+  if (normClean.includes('anti tg') || normClean.includes('antitg') || normClean.includes('anti tireoglobulina') || normClean.includes('antitireoglobulina')) {
+    return 'Anticorpos Anti-Tireoglobulina (Anti-Tg)';
+  }
+  if (normClean.includes('bilirrubina')) {
+    if (normClean.includes('direta')) return 'Bilirrubina Direta';
+    if (normClean.includes('indireta')) return 'Bilirrubina Indireta';
+    if (normClean.includes('total') && !normClean.includes('fracoes')) return 'Bilirrubina Total';
+    return 'Bilirrubinas (Total e Frações)';
+  }
+  if (normClean.includes('proteina')) {
+    if (normClean.includes('total') || normClean.includes('totais')) return 'Proteínas Totais';
+  }
+  if (normClean.includes('albumina')) return 'Albumina Sérica';
+  if (normClean.includes('globulina') && !normClean.includes('imunoglobulina') && !normClean.includes('tireoglobulina') && !normClean.includes('macroglobulina')) return 'Globulina';
+  if (normClean.includes('anti ccp') || normClean.includes('anti-ccp')) {
+    return 'Anti-CCP (Anticorpos Anti-Peptídeo Citrulinado Cíclico)';
+  }
   if (normClean.includes('eletroforese') && (normClean.includes('proteina') || normClean.includes('proteinas'))) {
     return 'Eletroforese de Proteínas';
   }
@@ -2721,9 +2789,6 @@ export function normalizeAndMatchExam(rawName: string): string {
   }
   if (normClean.includes('fator reumatoide') || words.includes('fr')) {
     return 'Fator Reumatoide (FR)';
-  }
-  if (normClean.includes('anti ccp') || normClean.includes('anti-ccp')) {
-    return 'Anti-CCP (Anticorpos Anti-Peptídeo Citrulinado Cíclico)';
   }
   if (normClean.includes('apo a1') || normClean.includes('apo a-1') || normClean.includes('apolipoproteina a')) {
     return 'Apolipoproteína A-1 (Apo A-1)';

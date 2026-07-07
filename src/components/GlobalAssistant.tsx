@@ -275,11 +275,11 @@ export function GlobalAssistant() {
       {/* Floating Action Button */}
       <button 
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-50 p-4 bg-teal-600 text-white rounded-full shadow-2xl hover:bg-teal-700 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 font-bold ${isOpen ? 'opacity-0 pointer-events-none translate-y-10' : 'opacity-100 translate-y-0'}`}
+        className={`fixed bottom-6 right-6 z-50 p-4 bg-teal-600 text-white rounded-full shadow-2xl hover:bg-teal-700 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center font-bold ${isOpen ? 'opacity-0 pointer-events-none translate-y-10' : 'opacity-100 translate-y-0'}`}
         id="btn-global-assistant-trigger"
+        aria-label="Perguntar ao Doutor IA"
       >
-        <Sparkles size={22} className="animate-pulse shrink-0" />
-        <span className="text-xs tracking-wider font-extrabold pr-0.5 uppercase">Perguntar ao Doutor IA</span>
+        <Sparkles size={26} className="animate-pulse shrink-0" />
       </button>
 
       {/* Chat Windows container */}
