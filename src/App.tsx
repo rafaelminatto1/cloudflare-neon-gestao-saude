@@ -55,6 +55,7 @@ import { MedicalConsultationView } from './components/MedicalConsultationView';
 import { NotificationBell } from './components/NotificationBell';
 import MobileAppLayout from './components/MobileAppLayout';
 import { BiomarkerRegressionChart } from './components/BiomarkerRegressionChart';
+import { LongevityDashboard } from './components/LongevityDashboard';
 
 // --- TOAST SYSTEM ---
 type ToastType = 'success' | 'error' | 'info';
@@ -2177,7 +2178,7 @@ function MainApp() {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
       const validDesktopTabs = [
-        'dashboard', 'comparison', 'charts', 'cross', 'exams', 'exam-orders',
+        'dashboard', 'comparison', 'charts', 'longevity', 'cross', 'exams', 'exam-orders',
         'pathologies', 'medications', 'timeline', 'agenda', 'doctors',
         'dictionary', 'sources', 'profile', 'medical-consultation'
       ];
@@ -2218,7 +2219,7 @@ function MainApp() {
       const hash = window.location.hash.replace('#', '');
       if (hash) {
         const validDesktopTabs = [
-          'dashboard', 'comparison', 'charts', 'cross', 'exams', 'exam-orders',
+          'dashboard', 'comparison', 'charts', 'longevity', 'cross', 'exams', 'exam-orders',
           'pathologies', 'medications', 'timeline', 'agenda', 'doctors',
           'dictionary', 'sources', 'profile', 'medical-consultation'
         ];
@@ -2363,6 +2364,7 @@ function MainApp() {
           <NavItem icon={<Activity />} label="Visão Geral" active={activeTab === 'dashboard'} onClick={() => handleNavigate('dashboard')} />
           <NavItem icon={<Table />} label="Comparativo Analítico" active={activeTab === 'comparison'} onClick={() => handleNavigate('comparison')} />
           <NavItem icon={<HeartPulse />} label="Evolução (Gráficos)" active={activeTab === 'charts'} onClick={() => handleNavigate('charts')} />
+          <NavItem icon={<TrendingUp />} label="Tendências & Risco" active={activeTab === 'longevity'} onClick={() => handleNavigate('longevity')} />
           <NavItem icon={<PieChart />} label="Cruzamento & Relatório" active={activeTab === 'cross'} onClick={() => handleNavigate('cross')} />
           <NavItem icon={<FileText />} label="Todos os Exames" active={activeTab === 'exams'} onClick={() => handleNavigate('exams')} />
           <NavItem icon={<ClipboardList />} label="Pedidos de Exames" active={activeTab === 'exam-orders'} onClick={() => handleNavigate('exam-orders')} />
@@ -2417,6 +2419,7 @@ function MainApp() {
                 activeTab === 'dashboard' ? 'Painel de Visão Geral' :
                 activeTab === 'comparison' ? 'Comparativo de Biomarcadores' :
                 activeTab === 'charts' ? 'Gráficos de Evolução Clínica' :
+                activeTab === 'longevity' ? 'Dashboard de Tendências' :
                 activeTab === 'cross' ? 'Análise Cruzada e Correlação' :
                 activeTab === 'exams' ? 'Lista completa de Exames' :
                 activeTab === 'exam-orders' ? 'Pedidos e Receitas Médicas' :
@@ -2436,6 +2439,7 @@ function MainApp() {
           {activeTab === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
           {activeTab === 'comparison' && <ComparisonView onNavigate={handleNavigate} />}
           {activeTab === 'charts' && <ChartsView initialFilter={navParams} />}
+          {activeTab === 'longevity' && <LongevityDashboard />}
           {activeTab === 'cross' && <CrossReferencingView onNavigate={handleNavigate} />}
           {activeTab === 'exams' && <ExamsList initialFilter={navParams} onNavigate={handleNavigate} />}
           {activeTab === 'exam-orders' && <ExamOrdersView onNavigate={handleNavigate} />}
