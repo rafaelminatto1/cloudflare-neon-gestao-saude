@@ -182,6 +182,36 @@ const extractStructuredLabExams = (pdfText: string, fileName: string, pdfStorage
   return exams;
 };
 
+async function fetchPubMedReferences(examName: string) {
+  try {
+    const query = encodeURIComponent(`"${examName}" AND ("clinical significance" OR "diagnosis")`);
+    const searchRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${query}&retmode=json&retmax=3`);
+    if (!searchRes.ok) return null;
+    const searchData: any = await searchRes.json();
+    const pmids = searchData.esearchresult?.idlist || [];
+    if (pmids.length === 0) return null;
+    
+    const summaryRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${pmids.join(',')}&retmode=json`);
+    if (!summaryRes.ok) return null;
+    const summaryData: any = await summaryRes.json();
+    
+    const refs = pmids.map((id: string) => {
+      const doc = summaryData.result[id];
+      return {
+        title: doc?.title || 'Unknown Title',
+        url: `https://pubmed.ncbi.nlm.nih.gov/${id}/`,
+        source: doc?.source || 'PubMed',
+        pubdate: doc?.pubdate || ''
+      };
+    });
+    
+    return JSON.stringify(refs);
+  } catch (e) {
+    console.error("PubMed fetch error", e);
+    return null;
+  }
+}
+
 const dedupeExtractedExams = (exams: any[]) => {
   const seen = new Set<string>();
   return exams.filter(exam => {
@@ -759,6 +789,16 @@ Formato OBRIGATÓRIO do array exames: [{ dataExame: string, categoria: string (U
         }
         
         allExams = dedupeExtractedExams(allExams);
+
+        // Passo 1 RAG: Enriquecimento Automático com PubMed
+        for (let exam of allExams) {
+          if (exam.interpretacao === 'Alterado' || /reagente|positivo/i.test(exam.resultado)) {
+            const refs = await fetchPubMedReferences(exam.nomeExame);
+            if (refs) {
+              exam.scientificReferences = refs;
+            }
+          }
+        }
 
         if (allExams.length === 0 && hasError) {
            await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'error', error: lastError || 'Falha na extração de dados JSON' }));
