@@ -43,21 +43,21 @@ import path from 'path';
   const fileInput = await page.locator('input[type="file"]');
   if (await fileInput.count() > 0) {
       console.log("Fazendo upload do PDF...");
-      await fileInput.setInputFiles('/home/rafael/Documentos/gestao saude/Gest-o-saude/EXAMES/(03) 04-08-2022 Dr Rafael Gois Campos.pdf');
+      await fileInput.setInputFiles('/home/rafael/Documentos/gestao saude/gestao-saude-cloudflare/EXAMES/(02) 04-09-2021 Felipe Aragao da Silva.pdf');
   } else {
       console.log("Nao encontrou input de arquivo. Talvez tenha que clicar em Upload primeiro?");
       const uploadBtn = page.locator('button:has-text("Upload"), button:has-text("Adicionar"), button:has-text("Novo Exame")').first();
       if (await uploadBtn.count() > 0) {
           await uploadBtn.click();
           await page.waitForTimeout(1000);
-          await page.locator('input[type="file"]').setInputFiles('/home/rafael/Documentos/gestao saude/Gest-o-saude/EXAMES/(03) 04-08-2022 Dr Rafael Gois Campos.pdf');
+          await page.locator('input[type="file"]').setInputFiles('/home/rafael/Documentos/gestao saude/gestao-saude-cloudflare/EXAMES/(02) 04-09-2021 Felipe Aragao da Silva.pdf');
       }
   }
 
   // Wait for AI processing
   console.log("Aguardando IA processar...");
-  await page.waitForTimeout(30000); // 30s to allow Cloudflare AI to respond and Postgres to save
-  await page.screenshot({ path: 'prod_upload_test_3.png' });
+  await page.waitForTimeout(180000); // 180s to allow Cloudflare AI to respond and Postgres to save
+  await page.screenshot({ path: 'prod_upload_test_4.png' });
 
   console.log("Teste finalizado. Verifique as screenshots prod_upload_test_*.png");
   await browser.close();

@@ -22,6 +22,182 @@ const app = new Hono<{ Bindings: Bindings, Variables: { userId: string } }>();
 // Simple UUID fallback if crypto.randomUUID doesn't work (it should on CF Workers)
 const generateId = () => crypto.randomUUID();
 
+const normalizeForKey = (value: unknown) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim();
+
+const parseBrazilianDateFromText = (text: string, fileName: string) => {
+  const collectionMatch = text.match(/DATA COLETA\/RECEBIMENTO:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
+  if (collectionMatch) return `${collectionMatch[1]}/${collectionMatch[2]}/${collectionMatch[3]}`;
+
+  const fileMatch = fileName.match(/(\d{2})[-.](\d{2})[-.](\d{4})/);
+  if (fileMatch) return `${fileMatch[1]}/${fileMatch[2]}/${fileMatch[3]}`;
+
+  return new Date().toLocaleDateString('pt-BR');
+};
+
+const parseRequesterFromText = (text: string) => {
+  const requesterMatch = text.match(/Solicitante:\s*([^\n\r]+)/i);
+  return requesterMatch ? requesterMatch[1].trim() : 'Dr. Desconhecido';
+};
+
+const categorizeLabExam = (name: string) => {
+  const normalized = normalizeForKey(name);
+  if (/microalbuminuria|creatinina urinaria|albumina creatinina|acido urico/.test(normalized)) return 'Rins';
+  if (/bilirrubina|gama glutamil|fosfatase alcalina|albumina|globulina|proteinas/.test(normalized)) return 'Fígado';
+  if (/calcio|fosforo|magnesio|ferro|ferritina|transferrina|zinco/.test(normalized)) return 'Nutrientes';
+  if (/t3|t4|tireoide/.test(normalized)) return 'Tireoide';
+  if (/testosterona|shbg|psa|fsh|luteinizante|prolactina|aldosterona|cortisol|insulina|dehidroepiandrosterona/.test(normalized)) return 'Hormônios';
+  if (/fator reumatoide|endomisio|transglutaminase|auto|fan|nucleo|nucleolo|citoplasma|metafasica/.test(normalized)) return 'Autoimunidade';
+  if (/proteina c reativa|pcr|creatinofosfoquinase|cpk/.test(normalized)) return 'Marcadores Celulares Integrados';
+  return 'Sangue';
+};
+
+const inferInterpretation = (result: string, reference: string) => {
+  const resultNumber = Number(String(result).replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.'));
+  if (!Number.isFinite(resultNumber) || !reference) return 'Não Informado';
+
+  const refNumbers = Array.from(reference.matchAll(/\d+(?:[.,]\d+)?/g))
+    .map(match => Number(match[0].replace('.', '').replace(',', '.')))
+    .filter(Number.isFinite);
+
+  if (refNumbers.length >= 2) {
+    const [min, max] = [Math.min(refNumbers[0], refNumbers[1]), Math.max(refNumbers[0], refNumbers[1])];
+    if (resultNumber < min || resultNumber > max) return 'Alterado';
+    return 'Normal';
+  }
+
+  if (/inferior|menor|até|ate/i.test(reference) && refNumbers.length >= 1) {
+    return resultNumber <= refNumbers[0] ? 'Normal' : 'Alterado';
+  }
+
+  return 'Não Informado';
+};
+
+const looksLikeLabHeader = (line: string) => /RESULTADO.*REFER|R E S U LTA D O/i.test(line);
+
+const isLabFooterLine = (line: string) => /^Assinado|^Responsável|^Núcleo|^www\.|^Rafael |^Sexo:|^DATA COLETA|^Dentro do intervalo|^Legenda|^A interpretação|^Data da geração|^Sob a|^Scapulatempo|^Laudo|^prescritor|^Laboratório|^NAM|^Valide|^Code$|^valida|^Token|^Pág\./i.test(line);
+
+const shouldSkipLabLine = (line: string) => !line
+  || /^\(?(Material|Método)/i.test(line)
+  || /^Nota|^Observa|^Referencia|^Referências|^Bibliografia|^Tabela de Referência|^Comentários|^Metodologia|^Coleta entre|^\*|^Caso|^indivíduos/i.test(line);
+
+const extractStructuredLabExams = (pdfText: string, fileName: string, pdfStoragePath: string) => {
+  const lines = pdfText.split(/\n/)
+    .map(line => line.trim().replace(/\s+/g, ' '))
+    .filter(Boolean);
+
+  const dataExame = parseBrazilianDateFromText(pdfText, fileName);
+  const medicoSolicitante = parseRequesterFromText(pdfText);
+  const unitPattern = '(?:m?UI\\/mL|mU\\/L|U\\/L|ng\\/dL|mg\\/dL|g\\/dL|mg\\/L|g\\/L|nmol\\/L|Elia\\s*U\\/mL|[µμu]g\\/dL|%)';
+  const resultValuePattern = '(?:Inferior|Superior|Maior|Menor|Negativo|Positivo|Reagente|Não Reagente|Nao Reagente|Vide Observação|[<>]?\\d+[\\d.,]*(?:\\/\\d+)?)(?:\\s+a\\s+\\d+[\\d.,]*)?';
+  const resultPattern = new RegExp(`^(.*?)\\s+(${resultValuePattern})\\s*(${unitPattern})?\\s*(.*)$`, 'i');
+  const leadingResultPattern = new RegExp(`^(${resultValuePattern})\\s*(${unitPattern})?\\s*(.*)$`, 'i');
+
+  const hasMaterialSoon = (index: number) => {
+    for (let cursor = index + 1; cursor <= Math.min(index + 6, lines.length - 1); cursor++) {
+      if (/^\(?(Material|Método)/i.test(lines[cursor])) return true;
+      if (looksLikeLabHeader(lines[cursor]) || isLabFooterLine(lines[cursor])) return false;
+    }
+    return false;
+  };
+
+  let inResultSection = false;
+  let pendingNameParts: string[] = [];
+  const exams: any[] = [];
+
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+
+    if (looksLikeLabHeader(line)) {
+      inResultSection = true;
+      pendingNameParts = [];
+      continue;
+    }
+
+    if (!inResultSection) continue;
+
+    if (isLabFooterLine(line)) {
+      if (/^Assinado|^Responsável|^Núcleo/i.test(line)) {
+        pendingNameParts = [];
+        inResultSection = false;
+      }
+      continue;
+    }
+
+    if (shouldSkipLabLine(line)) continue;
+
+    const leadingResultMatch = pendingNameParts.length > 0 ? line.match(leadingResultPattern) : null;
+    const resultMatch = leadingResultMatch || line.match(resultPattern);
+    const materialSoon = hasMaterialSoon(index);
+
+    if (resultMatch && materialSoon) {
+      const nameParts = leadingResultMatch ? pendingNameParts : [...pendingNameParts, resultMatch[1]];
+      const name = nameParts
+        .join(' ')
+        .replace(/\bGlobul\s+ina\b/gi, 'Globulina')
+        .replace(/\bTot\s+ais\b/gi, 'Totais')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (
+        name
+        && !/^\d|^de |^até |^ate |^confira|^vide|^pré |^pre |^pós |^pos |^abaixo de|^acima de/i.test(name)
+      ) {
+        const resultado = (leadingResultMatch ? resultMatch[1] : resultMatch[2]).trim();
+        const unidade = (leadingResultMatch ? resultMatch[2] : resultMatch[3] || '').replace(/\s+/g, '').trim();
+        const valorReferencia = (leadingResultMatch ? resultMatch[3] : resultMatch[4] || '').trim();
+
+        exams.push({
+          dataExame,
+          categoria: categorizeLabExam(name),
+          nomeExame: name,
+          resultado,
+          unidade,
+          valorReferencia,
+          interpretacao: inferInterpretation(resultado, valorReferencia),
+          medicoSolicitante,
+          arquivoOrigem: fileName,
+          especialidadeMedica: 'Clínica Médica',
+          grupoSistemico: categorizeLabExam(name),
+          tags: 'extração estruturada, laboratório',
+          impactoAutoimune: categorizeLabExam(name) === 'Autoimunidade' ? 'Médio' : 'Baixo',
+          pdfStoragePath
+        });
+      }
+
+      pendingNameParts = [];
+    } else if (
+      !resultMatch
+      && line.length < 70
+      && !/^de \d|^CONFIRA|^VIDE|^Em pé|^Posição|^Abaixo de|^Acima de|^\d+\s+a\s+\d+ anos|^Sexo |^Pré|^Pre|^Pós|^Pos|^Adultos|^Coleta/i.test(line)
+    ) {
+      pendingNameParts.push(line);
+    }
+  }
+
+  return exams;
+};
+
+const dedupeExtractedExams = (exams: any[]) => {
+  const seen = new Set<string>();
+  return exams.filter(exam => {
+    const key = [
+      normalizeForKey(exam.nomeExame),
+      normalizeForKey(exam.dataExame),
+      normalizeForKey(exam.resultado),
+      normalizeForKey(exam.unidade)
+    ].join('|');
+
+    if (!exam.nomeExame || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 // Auth Middleware
 app.use('/api/*', async (c, next) => {
   if (c.req.path === '/api/health') return next();
@@ -494,10 +670,12 @@ export default {
         const { extractText } = await import('unpdf');
         const textData = await extractText(pdfData);
         const pdfTextStr = Array.isArray(textData.text) ? textData.text.join('\n') : String(textData.text);
-        const truncatedText = pdfTextStr.substring(0, 5000);
+        
+        // Keep vector text small for embedding models
+        const vectorText = pdfTextStr.substring(0, 5000);
 
         try {
-          const embeddingResponse = await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [truncatedText] });
+          const embeddingResponse = await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [vectorText] });
           const vector = embeddingResponse.data[0];
           
           await env.VECTOR_INDEX.upsert([
@@ -507,54 +685,86 @@ export default {
               metadata: { userId, path: pdfStoragePath, type: 'exam_pdf' }
             }
           ]);
-          await env.GESTAO_SAUDE_KV.put(`doc:${fileId}`, truncatedText);
+          await env.GESTAO_SAUDE_KV.put(`doc:${fileId}`, vectorText);
         } catch (vectorErr) {
           console.error("Vectorize insertion error:", vectorErr);
         }
 
-        const messages = [
-          { role: 'system', content: 'Você é um assistente médico especializado na leitura de laudos e exames. Retorne APENAS um JSON estruturado, sem blocos de markdown e sem texto adicional.' },
-          { role: 'user', content: `Extraia as informações do exame abaixo e retorne APENAS um JSON válido contendo um array 'exames' (se for sangue/urina/fezes/imagem) ou 'avaliacoes' (se for laudo/parecer).
+        const chunkSize = 10000;
+        const structuredLabExams = extractStructuredLabExams(pdfTextStr, fileName, pdfStoragePath);
+        if (structuredLabExams.length >= 10) {
+          await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: dedupeExtractedExams(structuredLabExams) }));
+          continue;
+        }
+
+        let allExams: any[] = [...structuredLabExams];
+        let hasError = false;
+        let lastError = "";
+
+        for (let i = 0; i < pdfTextStr.length; i += chunkSize) {
+          const chunkText = pdfTextStr.substring(i, i + chunkSize);
+          const messages = [
+            { role: 'system', content: 'Você é um assistente médico especializado na leitura de laudos e exames. Retorne APENAS um JSON estruturado, sem blocos de markdown e sem texto adicional.' },
+            { role: 'user', content: `Extraia as informações do exame abaixo e retorne APENAS um JSON válido contendo um array 'exames'. Não use outros arrays como 'avaliacoes'.
 ATENÇÃO 1: Para perfis lipídicos, diferencie claramente 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Colesterol VLDL' e 'Colesterol Não-HDL' no campo 'nomeExame'. NUNCA chame as frações apenas de 'Colesterol Total'.
 ATENÇÃO 2: Para Bilirrubinas, diferencie 'Bilirrubina Total', 'Bilirrubina Direta' e 'Bilirrubina Indireta'.
 ATENÇÃO 3: Para Proteínas, diferencie 'Proteínas Totais', 'Albumina' e 'Globulina'.
 ATENÇÃO 4: Para marcadores Autoimunes e de Tireoide, seja estrito e não os agrupe. Diferencie 'c-ANCA' de 'p-ANCA', 'Anti-TPO' de 'Anti-Tireoglobulina'.
-Formato do array exames: [{ dataExame: string, categoria: string (USE APENAS: Autoimunidade, Coração, Eletrólitos, Exames de Imagem, Fígado, Gastroenterologia, Hormônios, Infectologia, Marcadores Celulares Integrados, Metabolismo, Nutrientes, Pâncreas, Rins, Sangue, Saúde Feminina, Saúde Masculina, Tireoide, Toxicologia), nomeExame: string, resultado: string, unidade: string, valorReferencia: string, interpretacao: string, medicoSolicitante: string, arquivoOrigem: string, especialidadeMedica: string, grupoSistemico: string, tags: string, impactoAutoimune: string }]. Se laudo: [{ date: string, type: string, text: string }].\n\nArquivo Origem Nome: ${fileName}\nTexto do PDF:\n${truncatedText}` }
-        ];
+ATENÇÃO 5: NÃO extraia as tabelas de referência como se fossem resultados de exames do paciente. Ignore linhas de legendas ou tabelas de referência, como 'Reagente: Superior a...', 'Não Reagente:', ou 'Inconclusivo:'. O resultado do paciente é apenas o valor principal que aparece antes da tabela.
+ATENÇÃO 6: Ignore seções de 'Notas', 'Observações' ou explicações teóricas que costumam aparecer após os resultados (ex: 'Como indicador de risco cardiovascular...'). Não extraia isso como novos exames.
+ATENÇÃO 7: Para exames descritivos longos (ex: anatomopatológico, biópsias, ecocardiograma, ultrassom, raio-x, tomografia, ressonância), extraia a 'Conclusão' ou 'Diagnóstico' como sendo o 'resultado'. Se não houver uma conclusão explícita, faça um breve resumo dos achados mais importantes no campo 'resultado'.
+Formato OBRIGATÓRIO do array exames: [{ dataExame: string, categoria: string (USE APENAS: Autoimunidade, Coração, Eletrólitos, Exames de Imagem, Fígado, Gastroenterologia, Hormônios, Infectologia, Marcadores Celulares Integrados, Metabolismo, Nutrientes, Pâncreas, Rins, Sangue, Saúde Feminina, Saúde Masculina, Tireoide, Toxicologia), nomeExame: string, resultado: string, unidade: string, valorReferencia: string, interpretacao: string, medicoSolicitante: string, arquivoOrigem: string, especialidadeMedica: string, grupoSistemico: string, tags: string, impactoAutoimune: string }].\n\nArquivo Origem Nome: ${fileName}\nParte do Texto do PDF (${Math.floor(i/chunkSize) + 1}):\n${chunkText}` }
+          ];
 
-        let aiResponse;
-        try {
-          aiResponse = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
-            gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
-          });
-        } catch (e) {
-          console.warn("LLaMA 70b failed, trying 8b fallback", e);
-          aiResponse = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages, max_tokens: 4096 }, {
-            gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
-          });
-        }
-        const rawAiResponse = (aiResponse as { response: string }).response;
-        
-        let parsedJson: any = { exams: [] };
-        try {
-          const match = rawAiResponse.match(/\{[\s\S]*\}/);
-          if (match) {
-            parsedJson = JSON.parse(match[0]);
-          } else {
-            parsedJson = JSON.parse(rawAiResponse);
+          let aiResponse;
+          try {
+            aiResponse = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
+              gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+            });
+          } catch (e) {
+            console.warn("LLaMA 70b failed for chunk, trying 8b fallback", e);
+            try {
+              aiResponse = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages, max_tokens: 4096 }, {
+                gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+              });
+            } catch (e2: any) {
+              console.error("8b fallback also failed for chunk", e2);
+              hasError = true;
+              lastError = e2.message;
+              continue;
+            }
           }
-          if (parsedJson.exames && !parsedJson.exams) parsedJson.exams = parsedJson.exames;
-          if (parsedJson.avaliacoes && !parsedJson.exams) parsedJson.exams = parsedJson.avaliacoes;
-        } catch (e) {
-           await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'error', error: 'Falha na extração de dados JSON' }));
-           continue;
+          
+          if (!aiResponse) continue;
+          
+          const rawAiResponse = (aiResponse as { response: string }).response;
+          
+          let parsedJson: any = { exams: [] };
+          try {
+            const match = rawAiResponse.match(/\{[\s\S]*\}/);
+            if (match) {
+              parsedJson = JSON.parse(match[0]);
+            } else {
+              parsedJson = JSON.parse(rawAiResponse);
+            }
+            if (parsedJson.exames && !parsedJson.exams) parsedJson.exams = parsedJson.exames;
+            
+            if (Array.isArray(parsedJson.exams)) {
+              const chunkExams = parsedJson.exams.map((ex: any) => ({ ...ex, pdfStoragePath }));
+              allExams = allExams.concat(chunkExams);
+            }
+          } catch (e) {
+             console.error("Failed to parse JSON for chunk:", e);
+          }
         }
         
-        if (parsedJson.exams) {
-          parsedJson.exams = parsedJson.exams.map((ex: any) => ({ ...ex, pdfStoragePath }));
-        }
+        allExams = dedupeExtractedExams(allExams);
 
-        await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: parsedJson.exams }));
+        if (allExams.length === 0 && hasError) {
+           await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'error', error: lastError || 'Falha na extração de dados JSON' }));
+        } else {
+           await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: allExams }));
+        }
         
       } catch (err: any) {
          await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'error', error: err.message }));
@@ -562,4 +772,3 @@ Formato do array exames: [{ dataExame: string, categoria: string (USE APENAS: Au
     }
   }
 };
-

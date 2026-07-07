@@ -205,6 +205,95 @@ export function getBaseExamName(fullName: string): string {
   return returnedName;
 }
 
+type NormalizedInterpretation = MedicalRecord['interpretacao'];
+
+const normalizeTextForComparison = (value: any): string => {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+};
+
+const parseLocalizedNumber = (value: any): number | null => {
+  const match = String(value || '').match(/-?\d+(?:[.,]\d{3})*(?:[.,]\d+)?|-?\d+(?:[.,]\d+)?/);
+  if (!match) return null;
+
+  let normalized = match[0];
+  const hasComma = normalized.includes(',');
+  const hasDot = normalized.includes('.');
+
+  if (hasComma) {
+    normalized = normalized.replace(/\./g, '').replace(',', '.');
+  } else if (hasDot) {
+    const parts = normalized.split('.');
+    const lastPart = parts[parts.length - 1];
+    if (parts.length > 2 || (lastPart.length === 3 && parts[0].length > 1)) {
+      normalized = normalized.replace(/\./g, '');
+    }
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const inferInterpretationFromResult = (resultado?: string, valorReferencia?: string): NormalizedInterpretation | null => {
+  const resultText = normalizeTextForComparison(resultado);
+  const refText = normalizeTextForComparison(valorReferencia);
+
+  if (!resultText) return null;
+
+  const numericValue = parseLocalizedNumber(resultado);
+  if (numericValue !== null && refText) {
+    const normalizedRef = refText.replace(/\s+/g, ' ');
+    const numberPattern = '-?\\d+(?:[.,]\\d{3})*(?:[.,]\\d+)?|-?\\d+(?:[.,]\\d+)?';
+    const rangeMatch = normalizedRef.match(new RegExp(`(${numberPattern})\\s*(?:a|-|ate|até)\\s*(${numberPattern})`, 'i'));
+    if (rangeMatch) {
+      const min = parseLocalizedNumber(rangeMatch[1]);
+      const max = parseLocalizedNumber(rangeMatch[2]);
+      if (min !== null && max !== null && max >= min) {
+        return numericValue >= min && numericValue <= max ? 'Normal' : 'Alterado';
+      }
+    }
+
+    const lessMatch = normalizedRef.match(new RegExp(`(?:<|<=|≤|ate|até)\\s*(${numberPattern})`, 'i'));
+    if (lessMatch) {
+      const max = parseLocalizedNumber(lessMatch[1]);
+      if (max !== null) return numericValue <= max ? 'Normal' : 'Alterado';
+    }
+
+    const greaterMatch = normalizedRef.match(new RegExp(`(?:>|>=|≥|maior que|acima de)\\s*(${numberPattern})`, 'i'));
+    if (greaterMatch) {
+      const min = parseLocalizedNumber(greaterMatch[1]);
+      if (min !== null) return numericValue >= min ? 'Normal' : 'Alterado';
+    }
+  }
+
+  const hasNegativeMeaning = /\b(nao|não|negativo|negativa|ausente|indetectavel|indetectável|normal|nao reagente|não reagente)\b/.test(resultText);
+  const hasPositiveMeaning = /\b(positivo|positiva|reagente|presente|detectavel|detectável|alterado|alterada)\b/.test(resultText);
+
+  if (hasPositiveMeaning && !hasNegativeMeaning) return 'Alterado';
+  if (hasNegativeMeaning) return 'Normal';
+
+  return null;
+};
+
+const normalizeInterpretation = (interpretacao?: string, resultado?: string, valorReferencia?: string): NormalizedInterpretation => {
+  const normalized = normalizeTextForComparison(interpretacao).replace(/[-_\s]+/g, ' ');
+
+  if (normalized.includes('sub') || normalized.includes('limitr') || normalized.includes('borderline')) {
+    return 'Sub-ópt.';
+  }
+  if (normalized.includes('alter') || normalized.includes('fora') || normalized.includes('alto') || normalized.includes('baixo') || normalized.includes('positivo') || normalized.includes('reagente')) {
+    if (!normalized.includes('nao reagente') && !normalized.includes('não reagente')) return 'Alterado';
+  }
+  if (normalized.includes('normal') || normalized.includes('dentro') || normalized.includes('adequado') || normalized.includes('negativo') || normalized.includes('nao reagente') || normalized.includes('não reagente')) {
+    return 'Normal';
+  }
+
+  return inferInterpretationFromResult(resultado, valorReferencia) || 'Não Informado';
+};
+
 
 export function formatQualitativeResult(value: any): string {
   if (!value) return '';
@@ -869,7 +958,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return {
         ...exam,
         nomeExame: canonicalName,
-        categoria: resolvedCategory
+        categoria: resolvedCategory,
+        interpretacao: normalizeInterpretation(exam.interpretacao, exam.resultado, exam.valorReferencia)
       };
     }).sort((a, b) => parseDate(b.dataExame).getTime() - parseDate(a.dataExame).getTime());
   }, [exams]);
@@ -9996,7 +10086,7 @@ export function AddExamView({ onSuccess, onCancel }: { onSuccess: () => void, on
       if (data.taskId) {
         addToast('Documento em processamento estendido (background). Pode levar alguns minutos. Por favor, aguarde.', 'info');
         let iterations = 0;
-        const maxIterations = 50; // 50 * 8s = 400s (approx 6.6 min)
+        const maxIterations = 150; // 150 * 8s = 1200s (approx 20 min)
         while (iterations < maxIterations && isMounted.current) {
           await new Promise(r => setTimeout(r, 8000));
           if (!isMounted.current) break;
