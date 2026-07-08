@@ -40,8 +40,27 @@ const parseBrazilianDateFromText = (text: string, fileName: string) => {
 };
 
 const parseRequesterFromText = (text: string) => {
-  const requesterMatch = text.match(/Solicitante:\s*([^\n\r]+)/i);
-  return requesterMatch ? requesterMatch[1].trim() : 'Dr. Desconhecido';
+  // Try pattern: Solicitante: ...
+  let match = text.match(/(?:Solicitante|Médico Solicitante|Solicitado por):\s*([^\n\r]+)/i);
+  if (match) {
+    return match[1].trim();
+  }
+
+  // Try pattern: Dr.(a): 174993 - FELIPE ARAGAO DA SILVA (NotreLabs style)
+  match = text.match(/Dr\.\(a\):\s*(\d+)\s*-\s*([^\n\r]+)/i) || text.match(/Dr\(a\)\.?\s*:\s*(\d+)\s*-\s*([^\n\r]+)/i);
+  if (match) {
+    const crm = match[1].trim();
+    const name = match[2].trim();
+    return `${name} - CRM ${crm}`;
+  }
+
+  // General Dr. prefix pattern
+  match = text.match(/(?:Dr|Dra|Dr\(a\))\.?\s*:\s*([^\n\r]+)/i);
+  if (match) {
+    return match[1].trim();
+  }
+
+  return 'Dr. Desconhecido';
 };
 
 const categorizeLabExam = (name: string) => {
@@ -561,15 +580,26 @@ Seja extremamente preciso. Caso não encontre, infira a provável especialidade.
     const rawAiResponse = (aiResponse as { response: string }).response;
 
     let parsed = { name: doctorName, crm: crm, uf: uf, specialty: 'Clínico Geral' };
+    let found = false;
     try {
       const match = rawAiResponse.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-      else parsed = JSON.parse(rawAiResponse);
+      const parsedObj = match ? JSON.parse(match[0]) : JSON.parse(rawAiResponse);
+      if (parsedObj) {
+        parsed = {
+          name: parsedObj.name || doctorName,
+          crm: parsedObj.crm || crm,
+          uf: parsedObj.uf || uf || 'SP',
+          specialty: parsedObj.specialty || 'Clínica Médica'
+        };
+        // If the AI found a specific CRM or name that matches/is updated, set found true
+        if (parsedObj.crm && parsedObj.crm !== crm) found = true;
+        if (parsedObj.specialty && parsedObj.specialty !== 'Clínico Geral' && parsedObj.specialty !== 'Clínica Médica') found = true;
+      }
     } catch (e) {
       console.error("AI JSON parse error on CRM lookup:", rawAiResponse);
     }
 
-    return c.json({ success: true, data: parsed });
+    return c.json({ success: true, ...parsed, data: parsed, found });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
@@ -747,6 +777,7 @@ ATENÇÃO 4: Para marcadores Autoimunes e de Tireoide, seja estrito e não os ag
 ATENÇÃO 5: NÃO extraia as tabelas de referência como se fossem resultados de exames do paciente. Ignore linhas de legendas ou tabelas de referência, como 'Reagente: Superior a...', 'Não Reagente:', ou 'Inconclusivo:'. O resultado do paciente é apenas o valor principal que aparece antes da tabela.
 ATENÇÃO 6: Ignore seções de 'Notas', 'Observações' ou explicações teóricas que costumam aparecer após os resultados (ex: 'Como indicador de risco cardiovascular...'). Não extraia isso como novos exames.
 ATENÇÃO 7: Para exames descritivos longos (ex: anatomopatológico, biópsias, ecocardiograma, ultrassom, raio-x, tomografia, ressonância), extraia a 'Conclusão' ou 'Diagnóstico' como sendo o 'resultado'. Se não houver uma conclusão explícita, faça um breve resumo dos achados mais importantes no campo 'resultado'.
+ATENÇÃO 8: Para o campo 'medicoSolicitante', se houver um CRM (registro de médico) ou UF visível próximo ao nome do médico solicitante no texto, extraia-o junto no formato: 'Nome do Médico - CRM: 123456/UF' ou 'Nome do Médico - CRM 123456'. Exemplo: se encontrar 'Dr.(a): 174993 - FELIPE ARAGAO DA SILVA', retorne 'FELIPE ARAGAO DA SILVA - CRM 174993'.
 Formato OBRIGATÓRIO do array exames: [{ dataExame: string, categoria: string (USE APENAS: Autoimunidade, Coração, Eletrólitos, Exames de Imagem, Fígado, Gastroenterologia, Hormônios, Infectologia, Marcadores Celulares Integrados, Metabolismo, Nutrientes, Pâncreas, Rins, Sangue, Saúde Feminina, Saúde Masculina, Tireoide, Toxicologia), nomeExame: string, resultado: string, unidade: string, valorReferencia: string, interpretacao: string, medicoSolicitante: string, arquivoOrigem: string, especialidadeMedica: string, grupoSistemico: string, tags: string, impactoAutoimune: string }].\n\nArquivo Origem Nome: ${fileName}\nParte do Texto do PDF (${Math.floor(i/chunkSize) + 1}):\n${chunkText}` }
           ];
 

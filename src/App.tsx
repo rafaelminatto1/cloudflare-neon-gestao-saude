@@ -10011,7 +10011,8 @@ export function AddExamView({ onSuccess, onCancel }: { onSuccess: () => void, on
       });
 
       if (response.ok) {
-        const doctorData = await response.json();
+        const res = await response.json();
+        const doctorData = res.data || res;
         const docId = doctorData.crm ? `doc_${doctorData.crm}_${doctorData.uf || 'SP'}` : `doc_${Date.now()}`;
         const newDoc = {
           id: docId,

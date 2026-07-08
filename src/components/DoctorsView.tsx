@@ -151,7 +151,8 @@ export default function DoctorsView({ onNavigate }: DoctorsViewProps) {
         throw new Error(errData?.error || 'Falha na resposta do servidor.');
       }
 
-      const data = await response.json();
+      const res = await response.json();
+      const data = res.data || res;
       
       if (data) {
         setEditingDoctor(prev => ({
@@ -161,7 +162,7 @@ export default function DoctorsView({ onNavigate }: DoctorsViewProps) {
           uf: data.uf || prev?.uf || 'SP',
           specialty: data.specialty || prev?.specialty || ''
         }));
-        if (!data.found) {
+        if (!res.found && !data.found) {
           setCrmSearchError('Dados estimados e mapeados com base nos laudos e proximidade clínica.');
         }
       }
