@@ -14,7 +14,7 @@ export async function fetchWithRetry(
   let finalInit = { ...init };
 
   // Only attach JWT to our own /api endpoints
-  if (urlStr.includes('/api/')) {
+  if (urlStr.includes('/api/') && import.meta.env.VITE_NEON_AUTH_URL) {
     let token = null;
     try {
       token = await (authClient as any).getJWTToken?.();

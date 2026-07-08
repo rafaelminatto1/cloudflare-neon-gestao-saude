@@ -10062,7 +10062,6 @@ export function AddExamView({ onSuccess, onCancel }: { onSuccess: () => void, on
          await loadQueue();
       }
       
-      let pdfStoragePath = await uploadPDF(file, user.uid);
       addToast('Processando documento com Inteligência Artificial, isso pode levar alguns segundos...', 'info');
       
       const formData = new FormData();
@@ -10086,6 +10085,7 @@ export function AddExamView({ onSuccess, onCancel }: { onSuccess: () => void, on
       }
 
       let data = await response.json();
+      let pdfStoragePath = data.pdfStoragePath || '';
       
       if (data.taskId) {
         addToast('Documento em processamento estendido (background). Pode levar alguns minutos. Por favor, aguarde.', 'info');
@@ -10100,7 +10100,8 @@ export function AddExamView({ onSuccess, onCancel }: { onSuccess: () => void, on
             if (!statusRes.ok) throw new Error("Erro ao consultar status da IA.");
             const statusData = await statusRes.json();
             if (statusData.status === "completed") {
-              data = { exams: statusData.result };
+              data = { exams: statusData.result, pdfStoragePath: statusData.pdfStoragePath || pdfStoragePath };
+              pdfStoragePath = data.pdfStoragePath || pdfStoragePath;
               break;
             } else if (statusData.status === "error") {
               throw new Error(statusData.error || "Falha na extração de dados");

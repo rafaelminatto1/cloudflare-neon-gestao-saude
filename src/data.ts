@@ -208,10 +208,10 @@ export function getAutoCategory(nomeExame: string, originalCategory?: string, sc
     'ultrassom', 'ultrassonografia', 'usg', 'tomografia', 'tc', 'ecografia', 'mamografia',
     'endoscopia', 'colonoscopia', 'manometria', 'cintilografia', 'ecocardiograma', 'eletrocardiograma', 'ecg',
     'eletroencefalograma', 'eeg', 'densitometria', 'broncoscopia', 'cistoscopia', 'laringoscopia', 'nasolaringoscopia',
-    'nasofibrolaringoscopia', 'videolaringoscopia', 'audiometria', 'espirometria', 'doppler', 'duplex', 'polissonografia',
+    'nasofibrolaringoscopia', 'videolaringoscopia', 'audiometria', 'espirometry', 'doppler', 'duplex', 'polissonografia',
     'tomografia computadorizada'
   ];
-  if (imageKeywords.some(matchesKeyword) || orig === 'IMAGEM') {
+  if (imageKeywords.some(matchesKeyword) || orig === 'IMAGEM' || orig === 'EXAMES DE IMAGEM') {
     return 'IMAGEM';
   }
 
@@ -236,10 +236,15 @@ export function getAutoCategory(nomeExame: string, originalCategory?: string, sc
 
   // 3. Urine exams (Urina / Líquidos urinários)
   const urineKeywords = [
-    'urina', 'eas', 'tipo 1', 'jacto', 'urinocultura', 'clearence de creatinina', 'microalbuminuria',
-    'proteinuria', 'uropatologia', 'urina de 24h', 'urina de 24 horas', 'urina tipo i'
+    'urina', 'eas', 'tipo 1', 'jacto', 'urinocultura', 'urocultura', 'clearence de creatinina', 'microalbuminuria',
+    'proteinuria', 'uropatologia', 'urina de 24h', 'urina de 24 horas', 'urina tipo i', 'urinaria', 'urinario',
+    'creatininuria', 'albuminuria', 'amostra isolada', 'relacao albumina/creatinina', 'urina de 24'
   ];
-  if (urineKeywords.some(matchesKeyword)) {
+  const urineSpecificKeywords = [
+    'ph', 'densidade', 'nitrito', 'piocitos', 'piocito', 'celulas epiteliais', 'cristais', 'cilindros',
+    'cor', 'aspecto', 'sedimentoscopia', 'urobilinogenio', 'corpos cetonicos', 'leveduras', 'bacterias'
+  ];
+  if (urineKeywords.some(matchesKeyword) || ((orig === 'RINS' || orig === 'URINA') && urineSpecificKeywords.some(matchesKeyword))) {
     return 'URINA';
   }
 
@@ -248,7 +253,10 @@ export function getAutoCategory(nomeExame: string, originalCategory?: string, sc
     'fezes', 'parasitologico', 'mif', 'coprocultura', 'sangue oculto', 'calprotectina fecal',
     'elastase fecal', 'pesquisa de rotavirus', 'rotavirus', 'fecal', 'coprologico'
   ];
-  if (fecesKeywords.some(matchesKeyword)) {
+  const fecesSpecificKeywords = [
+    'consistencia', 'mucus', 'ph fecal', 'gordura fecal', 'substancias redutoras'
+  ];
+  if (fecesKeywords.some(matchesKeyword) || ((orig === 'GASTROENTEROLOGIA' || orig === 'INFECTOLOGIA' || orig === 'FEZES') && fecesSpecificKeywords.some(matchesKeyword))) {
     return 'FEZES';
   }
 
@@ -273,12 +281,20 @@ export function getAutoCategory(nomeExame: string, originalCategory?: string, sc
     'ferro serico', 'ferritina serica', 'sodio serico', 'potassio serico', 'calcio ionico',
     'calcio serico', 'magnesio serico', 'fosforo serico', 'zinco', 'cobre', 'selenio'
   ];
-  if (bloodKeywords.some(matchesKeyword) || orig === 'LAB' || orig === 'SANGUE') {
+  
+  const bloodPanels = [
+    'LAB', 'SANGUE', 'AUTOIMUNIDADE', 'INFECTOLOGIA', 'TIREOIDE', 'FÍGADO', 'RINS',
+    'HORMONIOS', 'HORMÔNIOS', 'ELETRÓLITOS', 'METABOLISMO', 'NUTRIENTES', 'CORAÇÃO',
+    'MARCADORES CELULARES INTEGRADOS', 'PÂNCREAS', 'TOXICOLOGIA', 'SAÚDE FEMININA', 'SAÚDE MASCULINA',
+    'GASTROENTEROLOGIA'
+  ];
+  
+  if (bloodKeywords.some(matchesKeyword) || bloodPanels.includes(orig)) {
     return 'SANGUE';
   }
 
   // Default fallbacks 
-  if (orig === 'LAB') return 'SANGUE';
+  if (orig === 'LAB' || bloodPanels.includes(orig)) return 'SANGUE';
   if (orig === 'AVALIAÇÃO') return 'LAUDO';
 
   return 'OUTROS';

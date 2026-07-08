@@ -148,7 +148,7 @@ const extractStructuredLabExams = (pdfText: string, fileName: string, pdfStorage
         && !/^\d|^de |^até |^ate |^confira|^vide|^pré |^pre |^pós |^pos |^abaixo de|^acima de/i.test(name)
       ) {
         const resultado = (leadingResultMatch ? resultMatch[1] : resultMatch[2]).trim();
-        const unidade = (leadingResultMatch ? resultMatch[2] : resultMatch[3] || '').replace(/\s+/g, '').trim();
+        const unidade = (leadingResultMatch ? (resultMatch[2] || '') : (resultMatch[3] || '')).replace(/\s+/g, '').trim();
         const valorReferencia = (leadingResultMatch ? resultMatch[3] : resultMatch[4] || '').trim();
 
         exams.push({
@@ -289,7 +289,7 @@ app.post('/api/parse-pdf', async (c) => {
 
     await c.env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'processing' }));
 
-    return c.json({ success: true, taskId: fileId, status: 'processing' });
+    return c.json({ success: true, taskId: fileId, status: 'processing', pdfStoragePath });
   } catch (err: any) {
     console.error("Error parsing PDF:", err);
     return c.json({ error: err.message }, 500);
@@ -400,10 +400,11 @@ const getScopedUserId = (c: any, requestedUserId?: string) => {
 
 const ensureUser = async (db: ReturnType<typeof getDb>, userId: string, email?: string, name?: string) => {
   if (!userId) return;
+  const resolvedEmail = email || `${userId}@local.healthtracker`;
   await db.insert(schema.users).values({
     id: userId,
-    email: email || `${userId}@local.healthtracker`,
-    name: name || null,
+    email: resolvedEmail,
+    name: name || resolvedEmail,
     createdAt: new Date(),
   }).onConflictDoNothing();
 };
@@ -416,7 +417,10 @@ app.post('/api/users/ensure', async (c) => {
     const db = getDb(c);
     await ensureUser(db, userId, email, name);
     return c.json({ success: true });
-  } catch (err: any) { return c.json({ error: err.message }, 500); }
+  } catch (err: any) {
+    console.error('Error ensuring user:', err, err?.cause);
+    return c.json({ error: err.message }, 500);
+  }
 });
 
 app.post('/api/save-exams', async (c) => {
@@ -723,7 +727,7 @@ export default {
         const chunkSize = 10000;
         const structuredLabExams = extractStructuredLabExams(pdfTextStr, fileName, pdfStoragePath);
         if (structuredLabExams.length >= 10) {
-          await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: dedupeExtractedExams(structuredLabExams) }));
+          await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: dedupeExtractedExams(structuredLabExams), pdfStoragePath }));
           continue;
         }
 
@@ -803,7 +807,7 @@ Formato OBRIGATÓRIO do array exames: [{ dataExame: string, categoria: string (U
         if (allExams.length === 0 && hasError) {
            await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'error', error: lastError || 'Falha na extração de dados JSON' }));
         } else {
-           await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: allExams }));
+           await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: allExams, pdfStoragePath }));
         }
         
       } catch (err: any) {

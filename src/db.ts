@@ -12,10 +12,12 @@ function triggerRefresh() {
 
 export async function apiFetch(url: string, options: RequestInit = {}) {
   let token = null;
-  try {
-    token = await (authClient as any).getJWTToken?.();
-  } catch (err) {
-    console.warn("Neon Auth token fetch failed:", err);
+  if (import.meta.env.VITE_NEON_AUTH_URL) {
+    try {
+      token = await (authClient as any).getJWTToken?.();
+    } catch (err) {
+      console.warn("Neon Auth token fetch failed:", err);
+    }
   }
   const headers = new Headers(options.headers);
   if (token) {
