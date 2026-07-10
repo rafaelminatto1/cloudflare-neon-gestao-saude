@@ -249,6 +249,27 @@ const dedupeExtractedExams = (exams: any[]) => {
   });
 };
 
+// Detecta texto ilegível (PDF escaneado/manuscrito sem camada de texto): a
+// extração devolve símbolos como ~ | \ « ª {}. Docs reais têm >99% de
+// caracteres normais; lixo fica bem abaixo. Não usa proporção de palavras
+// para evitar falso positivo em laudos laboratoriais cheios de números.
+const looksGarbled = (text: string): boolean => {
+  const t = (text || '').replace(/\s+/g, ' ').trim();
+  if (t.length < 30) return true;
+  const good = (t.match(/[A-Za-zÀ-ÿ0-9\s.,;:%/()\-]/g) || []).length;
+  return good / t.length < 0.9;
+};
+
+// Título legível a partir do nome do arquivo (remove prefixo (NN), datas e sufixos).
+const titleFromFileName = (fileName: string): string =>
+  (fileName || 'Documento')
+    .replace(/\.(pdf|jpe?g|png|bmp)$/i, '')
+    .replace(/^\(\d+\)\s*/, '')
+    .replace(/\d{2}[.\-]\d{2}[.\-]\d{4}/, '')
+    .replace(/\s*\(laudo\+imagem\)/i, '')
+    .replace(/\s+imagem$/i, '')
+    .replace(/\s+/g, ' ').trim() || 'Documento';
+
 // Auth Middleware
 app.use('/api/*', async (c, next) => {
   if (c.req.path === '/api/health') return next();
@@ -1117,6 +1138,30 @@ export default {
         const textData = await extractText(pdfData);
         const pdfTextStr = Array.isArray(textData.text) ? textData.text.join('\n') : String(textData.text);
         
+        // Documento digitalizado/manuscrito sem texto legível: não alimenta o
+        // extrator nem a IA (gerariam códigos estranhos ou alucinações). Cataloga
+        // com um registro-nota apontando para o PDF original.
+        if (looksGarbled(pdfTextStr)) {
+          const note = {
+            dataExame: parseBrazilianDateFromText(pdfTextStr, fileName),
+            categoria: 'Outros',
+            nomeExame: titleFromFileName(fileName).substring(0, 150),
+            resultado: 'Documento digitalizado (imagem/manuscrito) sem texto legível para extração automática. Consulte o PDF original anexado.',
+            unidade: '',
+            valorReferencia: '',
+            interpretacao: 'Não Informado',
+            medicoSolicitante: 'Dr. Desconhecido',
+            arquivoOrigem: fileName,
+            especialidadeMedica: 'Clínica Médica',
+            grupoSistemico: 'Geral / Outros',
+            tags: 'documento digitalizado, sem texto extraível',
+            impactoAutoimune: 'Baixo',
+            pdfStoragePath,
+          };
+          await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: [note], pdfStoragePath }));
+          continue;
+        }
+
         // Keep vector text small for embedding models
         const vectorText = pdfTextStr.substring(0, 5000);
 
