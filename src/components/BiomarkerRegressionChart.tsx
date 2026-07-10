@@ -25,10 +25,39 @@ const linearRegression = (data: [number, number][]) => {
     sumXY += x * y;
     sumXX += x * x;
   }
-  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const denominator = n * sumXX - sumX * sumX;
+  if (denominator === 0) return { slope: 0, intercept: sumY / n };
+  const slope = (n * sumXY - sumX * sumY) / denominator;
   const intercept = (sumY - slope * sumX) / n;
   return { slope, intercept };
 };
+
+const parseReferenceRange = (refStr: string) => {
+  if (!refStr) return null;
+  const cleaned = refStr.replace(',', '.');
+  const matches = cleaned.match(/([0-9]+(?:\.[0-9]+)?)/g);
+  if (!matches || matches.length === 0) return null;
+  
+  if (matches.length >= 2) {
+    const min = parseFloat(matches[0]);
+    const max = parseFloat(matches[1]);
+    return { min, max };
+  }
+  
+  if (cleaned.includes('<') || cleaned.toLowerCase().includes('inferior') || cleaned.toLowerCase().includes('até')) {
+    const max = parseFloat(matches[0]);
+    return { min: null, max };
+  }
+  
+  if (cleaned.includes('>') || cleaned.toLowerCase().includes('superior') || cleaned.toLowerCase().includes('maior')) {
+    const min = parseFloat(matches[0]);
+    return { min, max: null };
+  }
+  
+  return null;
+};
+
+import { AlertCircle as AlertCircleIcon } from 'lucide-react';
 
 export const BiomarkerRegressionChart: React.FC = () => {
   const { processedExams } = useData();
@@ -275,37 +304,29 @@ export const BiomarkerRegressionChart: React.FC = () => {
     const yEnd = slope * xMax + intercept;
 
     // Draw regression line
-    chartArea.append("line")
-      .attr("x1", xMin)
-      .attr("y1", yStart)
-      .attr("x2", xMax)
-      .attr("y2", yEnd)
-      .attr("stroke", "#ec4899") // Pink/Rose color for regression
-      .attr("stroke-width", 2)
-      .attr("stroke-dasharray", "5,5")
-      .attr("opacity", 0); // start invisible for animation
+    if (!isNaN(xMin) && !isNaN(yStart) && !isNaN(xMax) && !isNaN(yEnd)) {
+      chartArea.append("line")
+        .attr("x1", xMin)
+        .attr("y1", yStart)
+        .attr("x2", xMax)
+        .attr("y2", yEnd)
+        .attr("stroke", "#ec4899") // Pink/Rose color for regression
+        .attr("stroke-width", 2)
+        .attr("stroke-dasharray", "5,5")
+        .attr("opacity", 0); // start invisible for animation
 
-    // Animate regression line
-    chartArea.selectAll("line[stroke='#ec4899']")
-      .transition()
-      .duration(1000)
-      .attr("opacity", 0.7);
+      // Animate regression line
+      chartArea.selectAll("line[stroke='#ec4899']")
+        .transition()
+        .duration(1000)
+        .attr("opacity", 0.7);
+    }
 
     // Cleanup tooltips on unmount
     return () => {
       d3.selectAll(".d3-tooltip").remove();
     };
   }, [visibleChartData, dimensions]);
-
-  if (candidateBiomarkers.length === 0) {
-    return (
-       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 h-full flex flex-col justify-center items-center text-center">
-         <LineChart className="text-slate-300 mb-2" size={24} />
-         <p className="text-sm font-semibold text-slate-500">Regressão de Evolução</p>
-         <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">É necessário pelo menos um biomarcador com 3 resultados históricos para calcular a regressão linear.</p>
-       </div>
-    );
-  }
 
   // Find if progression is trending up or down
   const regressionTrendDesc = () => {
@@ -323,6 +344,85 @@ export const BiomarkerRegressionChart: React.FC = () => {
   };
 
   const trend = regressionTrendDesc();
+
+  const predictionAlert = useMemo(() => {
+    if (chartData.length < 2) return null;
+    
+    const firstTime = chartData[0].date.getTime();
+    const msInDay = 24 * 60 * 60 * 1000;
+    
+    const regressionPoints = chartData.map(d => [
+      (d.date.getTime() - firstTime) / msInDay,
+      d.value
+    ] as [number, number]);
+    
+    const { slope, intercept } = linearRegression(regressionPoints);
+    if (slope === 0) return null;
+    
+    const latestExam = chartData[chartData.length - 1];
+    const refRange = parseReferenceRange(latestExam.reference);
+    if (!refRange) return null;
+    
+    const currentValue = latestExam.value;
+    const currentDays = (latestExam.date.getTime() - firstTime) / msInDay;
+    
+    let targetLimit: number | null = null;
+    let limitType: 'upper' | 'lower' | 'upper_crossed' | 'lower_crossed' | null = null;
+    
+    if (slope > 0 && refRange.max !== null) {
+      if (currentValue <= refRange.max) {
+        targetLimit = refRange.max;
+        limitType = 'upper';
+      } else {
+        targetLimit = refRange.max;
+        limitType = 'upper_crossed';
+      }
+    } else if (slope < 0 && refRange.min !== null) {
+      if (currentValue >= refRange.min) {
+        targetLimit = refRange.min;
+        limitType = 'lower';
+      } else {
+        targetLimit = refRange.min;
+        limitType = 'lower_crossed';
+      }
+    }
+    
+    if (targetLimit === null || limitType === null) return null;
+    
+    if (limitType === 'upper_crossed' || limitType === 'lower_crossed') {
+      const pctChangePerMonth = (slope / currentValue) * 30 * 100;
+      return {
+        limit: targetLimit,
+        limitType,
+        days: -1,
+        pct: pctChangePerMonth
+      };
+    }
+    
+    const targetDays = (targetLimit - intercept) / slope;
+    const daysToLimit = targetDays - currentDays;
+    
+    if (daysToLimit >= 0 && daysToLimit < 365 * 2) {
+      const pctChangePerMonth = (slope / currentValue) * 30 * 100;
+      return {
+        limit: targetLimit,
+        limitType,
+        days: Math.round(daysToLimit),
+        pct: pctChangePerMonth
+      };
+    }
+    
+  }, [chartData, selectedMarker]);
+
+  if (candidateBiomarkers.length === 0) {
+    return (
+       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 h-full flex flex-col justify-center items-center text-center">
+         <LineChart className="text-slate-300 mb-2" size={24} />
+         <p className="text-sm font-semibold text-slate-500">Regressão de Evolução</p>
+         <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">É necessário pelo menos um biomarcador com 3 resultados históricos para calcular a regressão linear.</p>
+       </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full w-full overflow-hidden">
@@ -370,7 +470,38 @@ export const BiomarkerRegressionChart: React.FC = () => {
            </div>
         )}
       </div>
-      <div className="mt-2 text-[10px] text-slate-400 flex items-center gap-1.5 justify-center border-t border-slate-50 pt-2">
+      {predictionAlert && (
+        <div className="mt-3 bg-pink-50 border border-pink-100 rounded-2xl p-4 flex gap-3 items-start relative z-10">
+          <div className="bg-pink-100 text-pink-600 p-2 rounded-xl mt-0.5 animate-pulse">
+            <AlertCircleIcon className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-[10px] font-black uppercase tracking-wider text-pink-850">Alerta de Trajetória Preventiva</h4>
+            <p className="text-xs text-pink-700 mt-1 font-semibold leading-relaxed">
+              {predictionAlert.days === -1 ? (
+                <>
+                  Atenção: O nível de <span className="font-extrabold">{selectedMarker}</span> já ultrapassou o limite recomendado de{' '}
+                  <span className="font-extrabold">{predictionAlert.limit} {chartData[0]?.unit}</span>. 
+                  Mantendo a trajetória atual de {predictionAlert.pct > 0 ? 'aumento' : 'redução'} de{' '}
+                  <span className="font-extrabold">{Math.abs(predictionAlert.pct).toFixed(1)}%</span> por mês, o marcador continuará se distanciando da faixa saudável.
+                </>
+              ) : (
+                <>
+                  Atenção: Se mantiver a trajetória atual de {predictionAlert.pct > 0 ? 'aumento' : 'redução'} de{' '}
+                  <span className="font-extrabold">{Math.abs(predictionAlert.pct).toFixed(1)}%</span> por mês, o nível de{' '}
+                  <span className="font-extrabold">{selectedMarker}</span> pode cruzar o limiar saudável de{' '}
+                  <span className="font-extrabold">{predictionAlert.limit} {chartData[0]?.unit}</span> em aproximadamente{' '}
+                  <span className="font-extrabold">
+                    {predictionAlert.days === 0 ? 'menos de 1 dia' : `~${predictionAlert.days} dias`}
+                  </span>.
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3 text-[10px] text-slate-400 flex items-center gap-1.5 justify-center border-t border-slate-50 pt-2">
         <span className="w-2 h-2 rounded-full bg-pink-500 inline-block"></span> 
         Linha tracejada representa a regressão linear de mínimos quadrados.
       </div>

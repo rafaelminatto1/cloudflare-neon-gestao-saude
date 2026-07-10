@@ -27,6 +27,7 @@ export const medicalRecords = pgTable('medical_records', {
   impactoAutoimune: varchar('impacto_autoimune', { length: 50 }),
   scientificReferences: json('scientific_references'),
   isManualCategory: boolean('is_manual_category').default(false),
+  cid10Codes: json('cid10_codes'), // Array of CID-10 codes found in the document
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

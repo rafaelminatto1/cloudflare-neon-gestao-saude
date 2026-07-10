@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pill, Printer, Beaker, FileText, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 export function SmartPrescription({ 
   onClose, 
@@ -35,11 +36,149 @@ export function SmartPrescription({
 
   const generatePDF = async () => {
     setGenerating(true);
-    // Here we would normally use jsPDF + html2canvas
-    setTimeout(() => {
+    try {
+      const element = document.getElementById('prescription-paper');
+      if (!element) throw new Error("Elemento do receituário não encontrado");
+      
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '800px';
+      iframe.style.height = '1130px';
+      iframe.style.border = 'none';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
+      
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) throw new Error("Iframe document not found");
+      
+      const title = "Clínica Gestão Saúde";
+      const dateStr = new Date().toLocaleDateString('pt-BR');
+      
+      const medicinesHtml = medicines.map((med, idx) => `
+        <div style="margin-bottom: 24px; border-bottom: 1px dashed #eee; padding-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-bottom: 6px; font-family: sans-serif;">
+            <span>${idx + 1}. ${med.name || '—'}</span>
+            <span>${med.dose || ''}</span>
+          </div>
+          <div style="font-style: italic; color: #555; font-size: 14px; margin-left: 20px; font-family: sans-serif;">
+            ${med.usage || '—'}
+          </div>
+        </div>
+      `).join('');
+      
+      const htmlContent = `
+        <html>
+          <head>
+            <style>
+              body {
+                font-family: 'Times New Roman', Times, serif;
+                color: #222;
+                background-color: #fff;
+                padding: 50px;
+                margin: 0;
+              }
+              .header {
+                text-align: center;
+                border-bottom: 2px solid #333;
+                padding-bottom: 20px;
+                margin-bottom: 40px;
+              }
+              .header h1 {
+                margin: 0;
+                font-size: 28px;
+                color: #111;
+              }
+              .header p {
+                margin: 5px 0 0 0;
+                font-size: 12px;
+                letter-spacing: 3px;
+                color: #666;
+                text-transform: uppercase;
+              }
+              .patient-info {
+                margin-bottom: 40px;
+                font-size: 16px;
+                font-family: sans-serif;
+              }
+              .patient-info p {
+                margin: 6px 0;
+              }
+              .medicines-list {
+                min-height: 450px;
+              }
+              .signature {
+                margin-top: 100px;
+                text-align: center;
+              }
+              .signature-line {
+                width: 250px;
+                border-bottom: 1px solid #333;
+                margin: 0 auto 8px auto;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>${title}</h1>
+              <p>Receituário Médico</p>
+            </div>
+            
+            <div class="patient-info">
+              <p><strong>Para:</strong> <span style="font-size: 18px; font-weight: bold;">${patientName}</span></p>
+              <p><strong>Data:</strong> ${dateStr}</p>
+            </div>
+            
+            <div class="medicines-list">
+              ${medicinesHtml}
+            </div>
+            
+            <div class="signature">
+              <div class="signature-line"></div>
+              <p style="margin: 0; font-size: 14px; color: #555; font-family: sans-serif;">Assinatura do Médico</p>
+            </div>
+          </body>
+        </html>
+      `;
+      
+      iframeDoc.open();
+      iframeDoc.write(htmlContent);
+      iframeDoc.close();
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const canvas = await html2canvas(iframeDoc.body, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      
+      const width = imgWidth * ratio;
+      const height = imgHeight * ratio;
+      const x = (pdfWidth - width) / 2;
+      const y = 0;
+      
+      pdf.addImage(imgData, 'PNG', x, y, width, height);
+      pdf.save(`receita-${patientName.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+      
+      document.body.removeChild(iframe);
+    } catch (err) {
+      console.error("Prescription PDF generation error:", err);
+      alert('Falha ao gerar o PDF da receita.');
+    } finally {
       setGenerating(false);
-      alert('Receita gerada e enviada para impressão!');
-    }, 1500);
+    }
   };
 
   return (

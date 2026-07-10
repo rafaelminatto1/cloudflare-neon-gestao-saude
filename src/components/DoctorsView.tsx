@@ -26,23 +26,48 @@ export default function DoctorsView({ onNavigate }: DoctorsViewProps) {
   const [whatsappTemplateOpen, setWhatsappTemplateOpen] = useState<string | null>(null);
   const [selectedTemplateText, setSelectedTemplateText] = useState('Olá Dr., gostaria de tirar uma dúvida sobre meus exames.');
   const [crmSearchError, setCrmSearchError] = useState('');
+  const [hiddenDoctors, setHiddenDoctors] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('hiddenExtractedDoctors');
+      return new Set(stored ? JSON.parse(stored) : []);
+    } catch { return new Set(); }
+  });
 
   // 1. Compile all unique doctors from exams and appointments to form the "Passed" list automatically
   const extractedDoctors = useMemo(() => {
-    const list: Record<string, { name: string; specialty: string; examCount: number; apptCount: number }> = {};
+    const list: Record<string, { name: string; crm: string; specialty: string; examCount: number; apptCount: number }> = {};
     
     // Scrape from exams
     exams.forEach(exam => {
-      const docName = (exam.medicoSolicitante || '').trim();
-      if (docName && docName.toLowerCase() !== 'não informado' && docName.toLowerCase() !== '—') {
-        const key = docName.toLowerCase();
+      const rawName = (exam.medicoSolicitante || '').trim();
+      if (rawName && rawName.toLowerCase() !== 'não informado' && rawName.toLowerCase() !== '—') {
+        let name = rawName;
+        let crm = '';
+        
+        const crmMatchStd = rawName.match(/(.+?)(?:\s+-\s+|\s+)CRM:?\s*([\d\w\/-]+)/i);
+        const crmMatchRev = rawName.match(/(?:Dr\.\(a\):\s*|CRM:?\s*)?([\d\w\/-]+)\s*-\s*(.+)/i);
+        
+        if (crmMatchStd) {
+          name = crmMatchStd[1].trim();
+          crm = crmMatchStd[2].trim();
+        } else if (crmMatchRev && /^\d+/.test(crmMatchRev[1])) {
+          crm = crmMatchRev[1].trim();
+          name = crmMatchRev[2].trim();
+        } else {
+          name = rawName.replace(/^Dr\.\(a\):\s*/i, '').trim();
+        }
+        const key = name.toLowerCase();
+        
         if (!list[key]) {
           list[key] = {
-            name: docName,
+            name,
+            crm,
             specialty: exam.especialidadeMedica || 'Clínica Médica',
             examCount: 0,
             apptCount: 0
           };
+        } else if (!list[key].crm && crm) {
+          list[key].crm = crm;
         }
         list[key].examCount += 1;
       }
@@ -50,16 +75,23 @@ export default function DoctorsView({ onNavigate }: DoctorsViewProps) {
 
     // Scrape from appointments
     appointments.forEach(appt => {
-      const docName = (appt.doctor || '').trim();
-      if (docName) {
-        const key = docName.toLowerCase();
+      const rawName = (appt.doctor || '').trim();
+      if (rawName) {
+        const crmMatch = rawName.match(/(.+?)\s*-\s*CRM:?\s*([\d\w\/-]+)/i);
+        const name = crmMatch ? crmMatch[1].trim() : rawName;
+        const crm = crmMatch ? crmMatch[2].trim() : '';
+        const key = name.toLowerCase();
+        
         if (!list[key]) {
           list[key] = {
-            name: docName,
+            name,
+            crm,
             specialty: appt.specialty || 'Clínica Médica',
             examCount: 0,
             apptCount: 0
           };
+        } else if (!list[key].crm && crm) {
+          list[key].crm = crm;
         }
         list[key].apptCount += 1;
       }
@@ -89,12 +121,15 @@ export default function DoctorsView({ onNavigate }: DoctorsViewProps) {
       if (mergedList[key]) {
         mergedList[key].examCount = ext.examCount;
         mergedList[key].apptCount = ext.apptCount;
+        if (!mergedList[key].crm && ext.crm) {
+          mergedList[key].crm = ext.crm;
+        }
         // Keep registered metadata, but inherit higher counts
       } else {
         mergedList[key] = {
           id: `ext_${key.replace(/[^a-z0-9]/g, '_')}`,
           name: ext.name,
-          crm: '',
+          crm: ext.crm || '',
           uf: 'SP',
           specialty: ext.specialty,
           phone: '',
@@ -108,8 +143,10 @@ export default function DoctorsView({ onNavigate }: DoctorsViewProps) {
       }
     });
 
-    return Object.values(mergedList).sort((a, b) => b.examCount - a.examCount);
-  }, [doctors, extractedDoctors]);
+    return Object.values(mergedList)
+      .filter(d => !hiddenDoctors.has(d.name.toLowerCase().trim()))
+      .sort((a, b) => b.examCount - a.examCount);
+  }, [doctors, extractedDoctors, hiddenDoctors]);
 
   // Filter list by search term
   const filteredDoctors = useMemo(() => {
@@ -215,6 +252,17 @@ export default function DoctorsView({ onNavigate }: DoctorsViewProps) {
         alert('Erro ao excluir: ' + err.message);
       }
     }
+  };
+
+  const handleHideExtracted = (name: string) => {
+    if (!window.confirm(`Ocultar "${name}" da lista? Ele não será mais exibido (os exames associados não são alterados).`)) return;
+    const key = name.toLowerCase().trim();
+    setHiddenDoctors(prev => {
+      const next = new Set(prev);
+      next.add(key);
+      try { localStorage.setItem('hiddenExtractedDoctors', JSON.stringify([...next])); } catch {}
+      return next;
+    });
   };
 
   const startWhatsAppChat = (phoneNumber: string, doctorName: string) => {
@@ -435,26 +483,35 @@ export default function DoctorsView({ onNavigate }: DoctorsViewProps) {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => {
-                          const targetDoc: Doctor = {
-                            id: '',
-                            name: doc.name,
-                            crm: doc.crm,
-                            uf: doc.uf,
-                            specialty: doc.specialty,
-                            phone: '',
-                            email: '',
-                            notes: '',
-                            userId: ''
-                          };
-                          handleOpenEditModal(targetDoc);
-                        }}
-                        className="w-9 h-9 border border-teal-100 text-teal-600 hover:bg-teal-50 rounded-lg flex items-center justify-center transition"
-                        title="Vincular dados oficiais"
-                      >
-                        <Compass size={14} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            const targetDoc: Doctor = {
+                              id: '',
+                              name: doc.name,
+                              crm: doc.crm,
+                              uf: doc.uf,
+                              specialty: doc.specialty,
+                              phone: '',
+                              email: '',
+                              notes: '',
+                              userId: ''
+                            };
+                            handleOpenEditModal(targetDoc);
+                          }}
+                          className="w-9 h-9 border border-teal-100 text-teal-600 hover:bg-teal-50 rounded-lg flex items-center justify-center transition"
+                          title="Vincular dados oficiais"
+                        >
+                          <Compass size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleHideExtracted(doc.name)}
+                          className="w-9 h-9 border border-slate-100 hover:border-red-50 hover:bg-red-50 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 transition"
+                          title="Ocultar médico detectado"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     )}
                   </div>
 

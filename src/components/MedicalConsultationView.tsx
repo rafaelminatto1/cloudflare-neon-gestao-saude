@@ -10,6 +10,7 @@ import { generateConsolidatedClinicalReport } from '../utils/pdfGenerator';
 import { fetchWithRetry } from '../utils/fetchWithRetry';
 import Markdown from 'react-markdown';
 import QRCode from 'react-qr-code';
+import { SmartPrescription } from './SmartPrescription';
 
 export function MedicalConsultationView() {
   const { processedExams = [], userPathologies = [], medications = [] } = useData();
@@ -27,6 +28,7 @@ export function MedicalConsultationView() {
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [executiveSummary, setExecutiveSummary] = useState<string | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [showPrescription, setShowPrescription] = useState(false);
 
   const generateSummary = async () => {
     if (isLoadingSummary) return;
@@ -503,27 +505,37 @@ export function MedicalConsultationView() {
       </div>
 
       {/* PDF Print/Download Actions */}
-      <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl p-5 text-center space-y-3 relative z-10">
+      <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl p-5 text-center space-y-4 relative z-10">
         <p className="text-xs text-slate-400 font-medium max-w-md mx-auto leading-relaxed">
-          Prefere entregar um documento físico ao médico? Geramos a Ficha Consolidada em formato oficial PDF para impressão rápida.
+          Prefere entregar um documento físico ao médico ou gerar receitas de medicamentos de suporte baseadas em diretrizes clínicas?
         </p>
-        <button
-          onClick={handlePrint}
-          disabled={isGeneratingPDF}
-          className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 disabled:bg-slate-800 text-slate-955 hover:scale-102 disabled:hover:scale-100 active:scale-98 text-xs font-black uppercase tracking-wider px-5 py-3 rounded-2xl transition-all shadow-lg cursor-pointer disabled:cursor-not-allowed"
-        >
-          {isGeneratingPDF ? (
-            <>
-              <Loader2 size={14} className="animate-spin text-slate-955" />
-              <span>Gerando Relatório...</span>
-            </>
-          ) : (
-            <>
-              <Printer size={14} className="text-slate-955" />
-              <span>Imprimir Ficha Completa</span>
-            </>
-          )}
-        </button>
+        <div className="flex flex-wrap justify-center gap-3">
+          <button
+            onClick={handlePrint}
+            disabled={isGeneratingPDF}
+            className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 disabled:bg-slate-800 text-slate-955 hover:scale-102 disabled:hover:scale-100 active:scale-98 text-xs font-black uppercase tracking-wider px-5 py-3 rounded-2xl transition-all shadow-lg cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isGeneratingPDF ? (
+              <>
+                <Loader2 size={14} className="animate-spin text-slate-955" />
+                <span>Gerando Relatório...</span>
+              </>
+            ) : (
+              <>
+                <Printer size={14} className="text-slate-955" />
+                <span>Imprimir Ficha Completa</span>
+              </>
+            )}
+          </button>
+          
+          <button
+            onClick={() => setShowPrescription(true)}
+            className="inline-flex items-center gap-2 bg-teal-650 hover:bg-teal-600 text-white hover:scale-102 active:scale-98 text-xs font-black uppercase tracking-wider px-5 py-3 rounded-2xl transition-all shadow-lg cursor-pointer shadow-teal-600/10"
+          >
+            <Pill size={14} className="text-white" />
+            <span>Gerar Receituário Inteligente</span>
+          </button>
+        </div>
       </div>
 
       {/* Fullscreen QR Modal */}
@@ -572,6 +584,14 @@ export function MedicalConsultationView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showPrescription && (
+        <SmartPrescription 
+          onClose={() => setShowPrescription(false)} 
+          patientName="Felipe Aragão da Silva"
+          recentExams={criticalFindings.slice(0, 3).map(e => e.nomeExame)}
+        />
+      )}
 
     </div>
   );

@@ -8,6 +8,13 @@
       "when": 1783026003629,
       "tag": "0000_parched_korath",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783717339306,
+      "tag": "0001_mixed_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

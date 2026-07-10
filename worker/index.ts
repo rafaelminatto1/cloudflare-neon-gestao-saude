@@ -17,6 +17,7 @@ type Bindings = {
   GESTAO_SAUDE_KV: KVNamespace;
   HYPERDRIVE: Hyperdrive;
   PDF_PROCESS_QUEUE: any;
+  AI_SEARCH: any; // AutoRAG / AI Search namespace binding
 };
 
 const app = new Hono<{ Bindings: Bindings, Variables: { userId: string } }>();
@@ -30,6 +31,361 @@ const normalizeForKey = (value: unknown) => String(value || '')
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, ' ')
   .trim();
+
+// Postgres (Neon) rejeita o caractere \u0000 em colunas text/varchar.
+// PDFs extraídos via unpdf/OCR podem conter bytes nulos (visto em
+// "Terapias.pdf": "Rua Vilela, 665, 8\u0000 andar"). Este helper remove
+// \u0000 e outros control chars ilegais de strings antes do INSERT,
+// recursivamente em objetos/arrays. Preserva \t \n \r (formato legítimo).
+const sanitizeText = <T>(value: T): T => {
+  if (typeof value === 'string') {
+    // Removes \u0000 (Postgres rejects it) and other illegal control chars
+    // eslint-disable-next-line no-control-regex
+    return value.replace(/[\u0000\uFFFD]/g, '').replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F]/g, '') as unknown as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeText(item)) as unknown as T;
+  }
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    const result: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      result[key] = sanitizeText(val);
+    }
+    return result as unknown as T;
+  }
+  return value;
+};
+
+// Extract CID-10 codes from text using regex pattern
+// Matches patterns like: F84.0, M79.7, C50.9, I10, J45.90, K35.80, etc.
+// CID-10 format: Letter + 2-3 digits + optional decimal + optional digits
+const extractCid10Codes = (text: string): string[] => {
+  // Regex for CID-10: Letter (A-Z) followed by 2-3 digits, optionally . and 1-2 digits
+  // Common patterns: F84.0, M79.7, C50.9, I10, J45.90, K35.80, G43.909, etc.
+  const cid10Regex = /\b([A-TV-Z][0-9]{2,3}(?:\.[0-9]{1,4})?)\b/gi;
+  const matches = text.match(cid10Regex);
+  if (!matches) return [];
+  
+  // Deduplicate and normalize to uppercase
+  const uniqueCodes = new Set<string>();
+  for (const match of matches) {
+    // Normalize: ensure letter is uppercase, remove trailing dots if any
+    const normalized = match.toUpperCase().replace(/\.+$/, '');
+    // Validate basic CID-10 structure
+    if (/^[A-TV-Z][0-9]{2,3}(?:\.[0-9]{1,4})?$/.test(normalized)) {
+      uniqueCodes.add(normalized);
+    }
+  }
+  return Array.from(uniqueCodes).sort();
+};
+
+// Analyze longitudinal trends for a series of exam results over time
+// Returns trend alerts for biomarkers that show concerning patterns
+const analyzeLongitudinalTrends = (exams: any[]): any[] => {
+  // Group exams by nomeExame (normalized)
+  const grouped = new Map<string, any[]>();
+  
+  for (const exam of exams) {
+    if (!exam.nomeExame || !exam.dataExame || !exam.resultado) continue;
+    
+    // Parse date from DD/MM/YYYY
+    const dateMatch = exam.dataExame.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if (!dateMatch) continue;
+    const date = new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`);
+    if (isNaN(date.getTime())) continue;
+    
+    // Parse numeric value from resultado
+    const numericResult = parseNumericResult(exam.resultado);
+    if (numericResult === null) continue;
+    
+    const key = normalizeForKey(exam.nomeExame);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push({
+      ...exam,
+      parsedDate: date,
+      numericValue: numericResult,
+      unit: exam.unidade || '',
+      referenceRange: exam.valorReferencia || ''
+    });
+  }
+  
+  const alerts: any[] = [];
+  
+  // Biomarkers that are clinically significant for longitudinal monitoring
+  const significantBiomarkers = new Set([
+    // Kidney
+    'creatinina', 'creatinina serica', 'ureia', 'acido urico', 'egfr', 'taxa de filtração glomerular',
+    'microalbuminuria', 'albumina creatinina',
+    // Liver
+    'alt', 'tgp', 'ast', 'tgo', 'gama gt', 'gama-glutamil transferase', 'fosfatase alcalina', 'bilirrubina total', 'bilirrubina direta', 'albumina',
+    // Lipids
+    'colesterol total', 'colesterol hdl', 'colesterol ldl', 'colesterol vldl', 'colesterol nao hdl', 'triglicerides', 'triglicerídeos',
+    // Glucose/Metabolic
+    'glicose', 'glicose de jejum', 'hemoglobina glicada', 'hba1c', 'insulina', 'homa-ir', 'homa-beta',
+    // Thyroid
+    'tsh', 't3 livre', 't4 livre', 'anti-tpo', 'anti-tireoglobulina',
+    // Inflammatory
+    'pcr', 'proteina c reativa', 'vhs', 'velocidade de hemossedimentacao',
+    // Blood
+    'hemoglobina', 'hematocrito', 'hemacias', 'leucocitos', 'plaquetas', 'ferritina', 'ferro', 'vitamina b12', 'acido folico',
+    // Cardiac
+    'troponina', 'ck-mb', 'bnp', 'nt-probnp',
+    // Others
+    'vitamina d', '25-hidroxi vitamina d', 'zinco', 'magnesio', 'calcio', 'fosforo', 'potassio', 'sodio'
+  ]);
+  
+  for (const [examName, entries] of grouped.entries()) {
+    // Only analyze if we have at least 3 data points and it's a significant biomarker
+    if (entries.length < 3) continue;
+    if (!significantBiomarkers.has(examName.toLowerCase())) continue;
+    
+    // Sort by date
+    entries.sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
+    
+    // Calculate linear regression slope (trend)
+    const trend = calculateTrend(entries.map(e => e.numericValue));
+    if (!trend) continue;
+    
+    const { slope, rSquared, direction } = trend;
+    
+    // Only flag if there's a meaningful trend (R² > 0.3 and slope is significant)
+    if (rSquared < 0.3 || Math.abs(slope) < 0.01) continue;
+    
+    const latest = entries[entries.length - 1];
+    const earliest = entries[0];
+    const changePercent = earliest.numericValue !== 0 
+      ? ((latest.numericValue - earliest.numericValue) / Math.abs(earliest.numericValue)) * 100 
+      : 0;
+    
+    // Determine clinical significance based on biomarker and direction
+    const clinicalContext = getClinicalContext(examName, direction);
+    if (!clinicalContext) continue;
+    
+    alerts.push({
+      biomarker: latest.nomeExame,
+      category: clinicalContext.category,
+      trend: direction, // 'increasing' | 'decreasing' | 'stable'
+      slope,
+      rSquared,
+      changePercent: Math.round(changePercent * 10) / 10,
+      dataPoints: entries.length,
+      dateRange: {
+        first: earliest.parsedDate.toLocaleDateString('pt-BR'),
+        last: latest.parsedDate.toLocaleDateString('pt-BR')
+      },
+      latestValue: `${latest.numericValue} ${latest.unit}`,
+      referenceRange: latest.referenceRange,
+      interpretation: clinicalContext.interpretation,
+      severity: clinicalContext.severity,
+      recommendation: clinicalContext.recommendation
+    });
+  }
+  
+  // Sort by severity (critical > high > moderate > low) then by R²
+  const severityOrder: Record<string, number> = { critical: 0, high: 1, moderate: 2, low: 3 };
+  alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity] || b.rSquared - a.rSquared);
+  
+  return alerts;
+};
+
+// Helper to parse numeric result from string
+const parseNumericResult = (result: string): number | null => {
+  if (!result) return null;
+  // Handle formats like "12.5", "12,5", "< 10", "> 5", "12.5 mg/dL", "Negativo", etc.
+  const cleaned = String(result).replace(/[<>]/g, '').trim();
+  // Try to extract first number
+  const match = cleaned.match(/(-?\d+(?:[.,]\d+)?)/);
+  if (!match) return null;
+  const num = Number(match[1].replace(',', '.'));
+  return Number.isFinite(num) ? num : null;
+};
+
+// Calculate linear regression trend for a series of values
+const calculateTrend = (values: number[]): { slope: number; rSquared: number; direction: 'increasing' | 'decreasing' | 'stable' } | null => {
+  const n = values.length;
+  if (n < 3) return null;
+  
+  const x = values.map((_, i) => i);
+  const y = values;
+  
+  const sumX = x.reduce((a, b) => a + b, 0);
+  const sumY = y.reduce((a, b) => a + b, 0);
+  const sumXY = x.reduce((a, b, i) => a + b * y[i], 0);
+  const sumX2 = x.reduce((a, b) => a + b * b, 0);
+  
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  
+  // Calculate R²
+  const yMean = sumY / n;
+  const ssTotal = y.reduce((a, b) => a + Math.pow(b - yMean, 2), 0);
+  const ssResidual = y.reduce((a, b, i) => a + Math.pow(b - (slope * x[i] + intercept), 2), 0);
+  const rSquared = ssTotal === 0 ? 0 : 1 - (ssResidual / ssTotal);
+  
+  let direction: 'increasing' | 'decreasing' | 'stable' = 'stable';
+  if (slope > 0.01) direction = 'increasing';
+  else if (slope < -0.01) direction = 'decreasing';
+  
+  return { slope, rSquared, direction };
+};
+
+// Clinical context for biomarker trends
+const getClinicalContext = (examName: string, direction: string): any => {
+  const name = examName.toLowerCase();
+  
+  // Kidney function - increasing creatinine/urea is bad, decreasing eGFR is bad
+  if (/(creatinina|ureia|acido urico)/.test(name)) {
+    if (direction === 'increasing') {
+      return {
+        category: 'Rins',
+        interpretation: 'Função renal possivelmente em declínio. Creatinina/ureia em elevação progressiva.',
+        severity: 'high',
+        recommendation: 'Avaliar nefrologista. Revisar medicações nefrotóxicas, hidratação, controle de PA e diabetes.'
+      };
+    }
+  }
+  
+  if (/egfr|taxa de filtração glomerular/.test(name)) {
+    if (direction === 'decreasing') {
+      return {
+        category: 'Rins',
+        interpretation: 'Taxa de filtração glomerular em queda. Risco de doença renal crônica progressiva.',
+        severity: 'high',
+        recommendation: 'Investigar causa (diabetes, hipertensão, nefrotoxicidade). Encaminhar nefrologia se < 60.'
+      };
+    }
+  }
+  
+  // Liver - increasing enzymes
+  if (/(alt|tgp|ast|tgo|gama gt|fosfatase alcalina)/.test(name)) {
+    if (direction === 'increasing') {
+      return {
+        category: 'Fígado',
+        interpretation: 'Enzimas hepáticas em elevação progressiva. Pode indicar esteatose, hepatite, toxicidade medicamentosa.',
+        severity: 'moderate',
+        recommendation: 'Avaliar hepatologista. Excluir esteatose (ultrassom), revisar medicações, dosar vírus hepatotrópicos.'
+      };
+    }
+  }
+  
+  // Lipids - increasing LDL/total cholesterol/triglycerides is bad
+  if (/(colesterol total|colesterol ldl|triglicer)/.test(name)) {
+    if (direction === 'increasing') {
+      return {
+        category: 'Metabolismo / Cardiovascular',
+        interpretation: 'Perfil lipídico em piora progressiva. Risco cardiovascular aumentado.',
+        severity: 'moderate',
+        recommendation: 'Reforçar dieta mediterrânea, exercício, avaliar indicação de estatina (escores de risco).'
+      };
+    }
+  }
+  
+  // HDL - decreasing is bad
+  if (/colesterol hdl/.test(name)) {
+    if (direction === 'decreasing') {
+      return {
+        category: 'Metabolismo / Cardiovascular',
+        interpretation: 'HDL (colesterol bom) em queda. Fator de risco cardiovascular.',
+        severity: 'moderate',
+        recommendation: 'Aumentar atividade aeróbica, cessar tabagismo, avaliar perfil metabólico completo.'
+      };
+    }
+  }
+  
+  // Glucose/HbA1c - increasing is bad
+  if (/(glicose|hemoglobina glicada|hba1c|insulina|homa)/.test(name)) {
+    if (direction === 'increasing') {
+      return {
+        category: 'Metabolismo / Diabetes',
+        interpretation: 'Controle glicêmico em deterioração. Risco de pré-diabetes/diabetes ou descompensação.',
+        severity: 'high',
+        recommendation: 'Avaliar endocrinologista. Revisar dieta, exercício, medicações. Dosar insulina/HOMA se ainda não feito.'
+      };
+    }
+  }
+  
+  // Thyroid - TSH increasing may indicate hypothyroidism
+  if (/tsh/.test(name)) {
+    if (direction === 'increasing') {
+      return {
+        category: 'Tireoide',
+        interpretation: 'TSH em elevação. Sugere hipotireoidismo subclínico ou em desenvolvimento.',
+        severity: 'moderate',
+        recommendation: 'Dosar T4 livre e anticorpos anti-TPO. Avaliar necessidade de reposição.'
+      };
+    }
+    if (direction === 'decreasing') {
+      return {
+        category: 'Tireoide',
+        interpretation: 'TSH em queda. Sugere hipertireoidismo ou superdosagem de levotiroxina.',
+        severity: 'moderate',
+        recommendation: 'Dosar T3/T4 livres. Ajustar dose de reposição se em uso.'
+      };
+    }
+  }
+  
+  // Inflammatory markers - increasing CRP/VHS
+  if (/(pcr|proteina c reativa|vhs|velocidade de hemossedimentacao)/.test(name)) {
+    if (direction === 'increasing') {
+      return {
+        category: 'Inflamação / Autoimunidade',
+        interpretation: 'Marcadores inflamatórios em elevação. Pode indicar atividade de doença autoimune, infecção crônica ou neoplasia.',
+        severity: 'moderate',
+        recommendation: 'Investigar causa (autoimunidade, infecção, neoplasia). Correlacionar com sintomas e outros exames.'
+      };
+    }
+  }
+  
+  // Hemoglobin - decreasing suggests anemia
+  if (/(hemoglobina|hematocrito|hemacias)/.test(name)) {
+    if (direction === 'decreasing') {
+      return {
+        category: 'Sangue / Anemia',
+        interpretation: 'Hemoglobina/hematócrito em queda progressiva. Anemia em desenvolvimento.',
+        severity: 'moderate',
+        recommendation: 'Investigar causa (ferro, B12, folato, sangramento oculto, doença crônica). Hemograma seriado.'
+      };
+    }
+  }
+  
+  // Ferritin - decreasing suggests iron deficiency
+  if (/ferritina/.test(name)) {
+    if (direction === 'decreasing') {
+      return {
+        category: 'Sangue / Ferro',
+        interpretation: 'Ferritina em queda. Depleção de estoques de ferro (pré-anemia ou anemia ferropênica).',
+        severity: 'moderate',
+        recommendation: 'Dosar ferro sérico, transferrina, saturação. Investigar sangramento oculto se homem/pós-menopausa.'
+      };
+    }
+  }
+  
+  // Vitamin D - decreasing
+  if (/vitamina d/.test(name)) {
+    if (direction === 'decreasing') {
+      return {
+        category: 'Nutrientes / Ósseo',
+        interpretation: 'Vitamina D em queda. Risco de osteopenia/osteoporose, imunidade comprometida.',
+        severity: 'low',
+        recommendation: 'Suplementação guiada por dosagem. Exposição solar segura. Avaliar PTH e cálcio.'
+      };
+    }
+  }
+  
+  // B12 - decreasing
+  if (/vitamina b12|b12/.test(name)) {
+    if (direction === 'decreasing') {
+      return {
+        category: 'Nutrientes / Neurológico',
+        interpretation: 'B12 em queda. Risco de neuropatia, anemia megaloblástica, declínio cognitivo.',
+        severity: 'moderate',
+        recommendation: 'Suplementar B12 (metilcobalamina). Investigar causa (dieta, absorção, metformina, PPI).'
+      };
+    }
+  }
+  
+  return null;
+};
 
 const parseBrazilianDateFromText = (text: string, fileName: string) => {
   const collectionMatch = text.match(/DATA COLETA\/RECEBIMENTO:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
@@ -457,6 +813,87 @@ app.post('/api/rag-chat', async (c) => {
   }
 });
 
+// AutoRAG Setup Endpoint - Creates the AutoRAG instance (config done via Dashboard)
+app.post('/api/autorag/setup', async (c) => {
+  try {
+    const { instanceName = 'gestao-saude-autorag' } = await c.req.json().catch(() => ({}));
+    
+    // Create or get the AutoRAG instance
+    await c.env.AI_SEARCH.create({ id: instanceName });
+    
+    return c.json({ 
+      success: true, 
+      instance: instanceName,
+      message: 'Instance created. Configure data source (R2 bucket: gestao-saude-pdfs), chunking, embedding, and generation models via Cloudflare Dashboard > AI Search.'
+    });
+  } catch (err: any) {
+    console.error('AutoRAG setup error:', err);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// AutoRAG Sync Endpoint - Trigger sync via REST API (not available in Workers binding yet)
+app.post('/api/autorag/sync', async (c) => {
+  try {
+    const { instanceName = 'gestao-saude-autorag' } = await c.req.json().catch(() => ({}));
+    // Note: Sync must be triggered via Cloudflare Dashboard or REST API
+    // The Workers binding doesn't expose sync() method yet
+    return c.json({ 
+      success: true, 
+      message: 'Sync must be triggered via Cloudflare Dashboard > AI Search > ' + instanceName + ' > Sync index',
+      dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/ai/autorag'
+    });
+  } catch (err: any) {
+    console.error('AutoRAG sync error:', err);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// AutoRAG Chat Endpoint - Uses managed RAG pipeline
+app.post('/api/autorag/chat', async (c) => {
+  try {
+    const { question, userId, instanceName = 'gestao-saude-autorag' } = await c.req.json();
+    
+    if (!question) {
+      return c.json({ error: 'Pergunta é obrigatória' }, 400);
+    }
+    
+    const instance = await c.env.AI_SEARCH.get(instanceName);
+    
+    // Build filters for multi-tenancy - only search user's documents
+    // New AI Search API uses direct filter object with operators like $eq
+    const filters = userId ? {
+      folder: { $eq: `${userId}/` }
+    } : undefined;
+    
+    const results = await instance.search({
+      messages: [{ role: 'user', content: question }],
+      ai_search_options: {
+        retrieval: {
+          max_num_results: 5,
+          filters,
+        },
+        generation: {
+          model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+          system_prompt: 'Você é um assistente médico auxiliando um paciente a interpretar seus exames. Responda em português do Brasil, de forma clara, empática e baseada em evidências. Cite as fontes quando relevante.',
+        },
+      },
+    });
+    
+    // Stream the response
+    return streamSSE(c, async (stream) => {
+      for await (const chunk of results) {
+        if (chunk.response) {
+          await stream.writeSSE({ data: JSON.stringify({ text: chunk.response }) });
+        }
+      }
+    });
+  } catch (err: any) {
+    console.error('AutoRAG chat error:', err);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
 // Global Chat / Insights Endpoint
 app.post('/api/chat-global', async (c) => {
   try {
@@ -803,12 +1240,12 @@ const getScopedUserId = (c: any, requestedUserId?: string) => {
 const ensureUser = async (db: ReturnType<typeof getDb>, userId: string, email?: string, name?: string) => {
   if (!userId) return;
   const resolvedEmail = email || `${userId}@local.healthtracker`;
-  await db.insert(schema.users).values({
+  await db.insert(schema.users).values(sanitizeText({
     id: userId,
     email: resolvedEmail,
     name: name || resolvedEmail,
     createdAt: new Date(),
-  }).onConflictDoNothing();
+  })).onConflictDoNothing();
 };
 
 app.post('/api/users/ensure', async (c) => {
@@ -834,7 +1271,7 @@ app.post('/api/save-exams', async (c) => {
 
     const db = getDb(c);
     await ensureUser(db, userId);
-    const values = exams.map((exam: any) => ({
+    const values = sanitizeText(exams.map((exam: any) => ({
       id: exam.id || generateId(),
       userId,
       dataExame: exam.dataExame,
@@ -856,7 +1293,7 @@ app.post('/api/save-exams', async (c) => {
       isManualCategory: exam.isManualCategory,
       createdAt: new Date(),
       updatedAt: new Date(),
-    }));
+    })));
 
     await db.insert(schema.medicalRecords).values(values);
     await invalidateCache(c, userId);
@@ -882,7 +1319,7 @@ app.put('/api/exams/:id', async (c) => {
     const updates = await c.req.json();
     const db = getDb(c);
     const userId = getScopedUserId(c, updates.userId);
-    const { userId: _ignoredUserId, ...safeUpdates } = updates;
+    const { userId: _ignoredUserId, ...safeUpdates } = sanitizeText(updates) as any;
     await db.update(schema.medicalRecords).set({ ...safeUpdates, updatedAt: new Date() }).where(and(eq(schema.medicalRecords.id, c.req.param('id')), eq(schema.medicalRecords.userId, userId)));
     await invalidateCache(c, userId);
     return c.json({ success: true });
@@ -920,7 +1357,7 @@ app.post('/api/doctors', async (c) => {
     if (!userId || !doctor) return c.json({ error: 'Invalid payload' }, 400);
     const db = getDb(c);
     await ensureUser(db, userId);
-    const values = {
+    const values = sanitizeText({
       id: doctor.id || generateId(),
       userId,
       name: doctor.name,
@@ -928,7 +1365,7 @@ app.post('/api/doctors', async (c) => {
       uf: doctor.uf,
       specialty: doctor.specialty,
       createdAt: new Date(),
-    };
+    });
     await db.insert(schema.doctors).values(values);
     await invalidateCache(c, userId);
     return c.json({ success: true });
@@ -992,7 +1429,7 @@ app.post('/api/appointments', async (c) => {
     const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
     await ensureUser(db, userId);
-    await db.insert(schema.medicalAppointments).values({ ...appointment, id: appointment.id || generateId(), userId, createdAt: new Date() });
+    await db.insert(schema.medicalAppointments).values(sanitizeText({ ...appointment, id: appointment.id || generateId(), userId, createdAt: new Date() }));
     await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
@@ -1007,7 +1444,7 @@ app.post('/api/pathologies', async (c) => {
     const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
     await ensureUser(db, userId);
-    await db.insert(schema.userPathologies).values({ ...pathology, id: pathology.id || generateId(), userId, createdAt: new Date() });
+    await db.insert(schema.userPathologies).values(sanitizeText({ ...pathology, id: pathology.id || generateId(), userId, createdAt: new Date() }));
     await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
@@ -1022,7 +1459,7 @@ app.post('/api/medications', async (c) => {
     const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
     await ensureUser(db, userId);
-    await db.insert(schema.continuousMedications).values({ ...medication, id: medication.id || generateId(), userId, createdAt: new Date() });
+    await db.insert(schema.continuousMedications).values(sanitizeText({ ...medication, id: medication.id || generateId(), userId, createdAt: new Date() }));
     await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
@@ -1037,7 +1474,7 @@ app.post('/api/exam-orders', async (c) => {
     const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
     await ensureUser(db, userId);
-    await db.insert(schema.examOrders).values({ ...examOrder, id: examOrder.id || generateId(), userId, createdAt: new Date() });
+    await db.insert(schema.examOrders).values(sanitizeText({ ...examOrder, id: examOrder.id || generateId(), userId, createdAt: new Date() }));
     await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
@@ -1052,7 +1489,7 @@ app.post('/api/timeline-events', async (c) => {
     const userId = getScopedUserId(c, requestedUserId);
     const db = getDb(c);
     await ensureUser(db, userId);
-    await db.insert(schema.customTimelineEvents).values({ ...event, id: event.id || generateId(), userId, createdAt: new Date() });
+    await db.insert(schema.customTimelineEvents).values(sanitizeText({ ...event, id: event.id || generateId(), userId, createdAt: new Date() }));
     await invalidateCache(c, userId);
     return c.json({ success: true });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
@@ -1099,6 +1536,37 @@ app.get('/api/all-data/:userId', async (c) => {
     await c.env.GESTAO_SAUDE_KV.put(`cache:alldata:${userId}`, JSON.stringify(responseData), { expirationTtl: 3600 });
 
     return c.json(responseData);
+  } catch (err: any) { return c.json({ error: err.message }, 500); }
+});
+
+// Longitudinal Trends Analysis Endpoint
+// Detects concerning trends in biomarkers over time
+app.get('/api/longitudinal-trends/:userId', async (c) => {
+  try {
+    const requestedUserId = c.req.param('userId');
+    const userId = getScopedUserId(c, requestedUserId);
+    
+    const db = getDb(c);
+    const records = await db.select().from(schema.medicalRecords).where(eq(schema.medicalRecords.userId, userId));
+    
+    if (!records || records.length === 0) {
+      return c.json({ alerts: [], message: 'Nenhum exame encontrado para análise de tendência.' });
+    }
+    
+    // Filter exams with valid data for trend analysis
+    const examsForTrend = records.filter(r => r.nomeExame && r.dataExame && r.resultado);
+    
+    if (examsForTrend.length < 3) {
+      return c.json({ alerts: [], message: 'Mínimo de 3 exames necessários para análise de tendência.' });
+    }
+    
+    const alerts = analyzeLongitudinalTrends(examsForTrend);
+    
+    return c.json({ 
+      alerts,
+      totalExamsAnalyzed: examsForTrend.length,
+      generatedAt: new Date().toISOString()
+    });
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
@@ -1176,7 +1644,7 @@ export default {
         const pdfData = new Uint8Array(arrayBuffer);
         const { extractText } = await import('unpdf');
         const textData = await extractText(pdfData);
-        let pdfTextStr = Array.isArray(textData.text) ? textData.text.join('\n') : String(textData.text);
+        let pdfTextStr = sanitizeText(Array.isArray(textData.text) ? textData.text.join('\n') : String(textData.text));
 
         // Documento digitalizado/manuscrito: a camada de texto veio ilegível.
         // Extrai as imagens JPEG embutidas e OCR-a via AI.toMarkdown (que lê
@@ -1221,9 +1689,16 @@ export default {
             tags: 'documento digitalizado, sem texto extraível',
             impactoAutoimune: 'Baixo',
             pdfStoragePath,
+            cid10Codes: [],
           };
           await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: [note], pdfStoragePath }));
           continue;
+        }
+
+        // Extract CID-10 codes from the full PDF text
+        const cid10Codes = extractCid10Codes(pdfTextStr);
+        if (cid10Codes.length > 0) {
+          console.log(`Extraídos ${cid10Codes.length} código(s) CID-10 de ${fileName}: ${cid10Codes.join(', ')}`);
         }
 
         // Keep vector text small for embedding models
@@ -1246,7 +1721,10 @@ export default {
         }
 
         const chunkSize = 10000;
-        const structuredLabExams = extractStructuredLabExams(pdfTextStr, fileName, pdfStoragePath);
+        let structuredLabExams = extractStructuredLabExams(pdfTextStr, fileName, pdfStoragePath);
+        // Add CID-10 codes to structured exams
+        structuredLabExams = structuredLabExams.map((exam: any) => ({ ...exam, cid10Codes }));
+        
         if (structuredLabExams.length >= 10) {
           await env.GESTAO_SAUDE_KV.put(`job:${fileId}`, JSON.stringify({ status: 'completed', result: dedupeExtractedExams(structuredLabExams), pdfStoragePath }));
           continue;
@@ -1271,7 +1749,9 @@ export default {
           }
 
           const parsed = parseExamsFromAiResponse(rawResponse);
-          allExams = allExams.concat(parsed.exams.map((ex: any) => ({ ...ex, pdfStoragePath })));
+          // Add CID-10 codes to AI-extracted exams
+          const aiExams = parsed.exams.map((ex: any) => ({ ...ex, pdfStoragePath, cid10Codes }));
+          allExams = allExams.concat(aiExams);
 
           if (!parsed.ok) {
             // Resposta truncada: o que era recuperável já foi salvo acima.
@@ -1284,7 +1764,7 @@ export default {
               try {
                 const partRaw = await runExtractionAi(env, buildExtractionMessages(fileName, parts[p], `${chunkLabel}.${p + 1}`));
                 const partParsed = parseExamsFromAiResponse(partRaw);
-                allExams = allExams.concat(partParsed.exams.map((ex: any) => ({ ...ex, pdfStoragePath })));
+                allExams = allExams.concat(partParsed.exams.map((ex: any) => ({ ...ex, pdfStoragePath, cid10Codes })));
                 chunkTotal += partParsed.exams.length;
               } catch (e: any) {
                 console.error(`Falha ao reprocessar metade ${p + 1} do chunk ${chunkLabel}`, e);
