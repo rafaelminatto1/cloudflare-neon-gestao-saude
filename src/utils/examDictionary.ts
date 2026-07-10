@@ -463,7 +463,7 @@ export const EXAM_GLOSSARY: DictionaryItem[] = [
     category: "Eletrólitos",
     description: "Principal cátion extracelular encarregado do controle osmótico fisiológico da pressão e regulação da hidratação celular corporal.",
     mostCommonBrazil: true,
-    aliases: ["sodio", "sodio serico", "na serico", "na", "sodium"],
+    aliases: ["sodio", "sodio serico", "na serico", "sodium"],
     labExamples: [
       { lab: "Fleury", label: "SODIO SERICO" }
     ]
@@ -2434,9 +2434,13 @@ export function normalizeAndMatchExam(rawName: string): string {
     if (words.includes('total') || words.includes('totais')) return 'Colesterol Total';
   }
 
-  // 3rd Priority: Partial alias matching
+  // 3rd Priority: Partial alias matching.
+  // Ignora aliases que colidem com preposições/artigos do português (ex.: o alias
+  // "na" do Sódio casaria com "Pressão Arterial Média na Vigília").
+  const ALIAS_STOPWORDS = new Set(['na', 'no', 'da', 'de', 'do', 'das', 'dos', 'ao', 'aos', 'em', 'ou', 'se', 'com', 'sem', 'por', 'para', 'as', 'os']);
   for (const item of EXAM_GLOSSARY) {
     for (const alias of item.aliases) {
+      if (ALIAS_STOPWORDS.has(alias)) continue;
       if (normClean.includes(" " + alias + " ") || normClean.startsWith(alias + " ") || normClean.endsWith(" " + alias)) {
         return item.canonicalName;
       }

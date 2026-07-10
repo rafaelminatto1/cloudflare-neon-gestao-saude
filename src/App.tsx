@@ -309,7 +309,11 @@ export function formatQualitativeResult(value: any): string {
 ');
   str = str.replace(/(padrão[^\n]+?(AC-\d+\*?))/ig, '\n\
 ');
-  str = str.replace(/([0-9]+\/[0-9]+)/g, 'Titulação: ');
+  // Rotula titulações sorológicas (ex.: 1/160) mantendo o valor; nunca mexe em
+  // razões de pressão arterial (mmHg), que também usam o formato "N/N".
+  if (!/mmhg/i.test(str)) {
+    str = str.replace(/(\d+\/\d+)/g, 'Titulação: $1');
+  }
   str = str.replace(/\n+/g, '\n').trim();
 
   return str;
