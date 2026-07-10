@@ -249,6 +249,43 @@ const dedupeExtractedExams = (exams: any[]) => {
   });
 };
 
+// Infla um stream Flate/zlib (Workers têm DecompressionStream nativo).
+async function inflateStream(bytes: Uint8Array): Promise<Uint8Array> {
+  const ds = new DecompressionStream('deflate');
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+// Extrai as imagens JPEG embutidas de um PDF escaneado (XObjects /DCTDecode,
+// possivelmente com /FlateDecode por cima). Retorna JPEGs prontos para OCR.
+async function extractJpegImagesFromPdf(buf: ArrayBuffer): Promise<Uint8Array[]> {
+  const data = new Uint8Array(buf);
+  const marker = new TextDecoder('latin1').decode(data); // 1 byte/char: offsets batem
+  const images: Uint8Array<ArrayBufferLike>[] = [];
+  let idx = 0;
+  while (images.length < 8) {
+    const dct = marker.indexOf('DCTDecode', idx);
+    if (dct < 0) break;
+    idx = dct + 9;
+    const st = marker.indexOf('stream', dct);
+    if (st < 0) continue;
+    let p = st + 6;
+    if (data[p] === 0x0d && data[p + 1] === 0x0a) p += 2;
+    else if (data[p] === 0x0a || data[p] === 0x0d) p += 1;
+    const end = marker.indexOf('endstream', p);
+    if (end < 0) continue;
+    let blob: Uint8Array<ArrayBufferLike> = data.slice(p, end);
+    while (blob.length && (blob[blob.length - 1] === 0x0a || blob[blob.length - 1] === 0x0d)) {
+      blob = blob.slice(0, -1);
+    }
+    try {
+      if (blob[0] === 0x78) blob = await inflateStream(blob); // Flate + DCT
+      if (blob[0] === 0xff && blob[1] === 0xd8) images.push(blob); // é JPEG
+    } catch { /* stream não decodificável: ignora */ }
+  }
+  return images;
+}
+
 // Detecta texto ilegível (PDF escaneado/manuscrito sem camada de texto): a
 // extração devolve símbolos como ~ | \ « ª {}. Docs reais têm >99% de
 // caracteres normais; lixo fica bem abaixo. Não usa proporção de palavras
@@ -1132,15 +1169,42 @@ export default {
         const object = await env.R2_BUCKET.get(pdfStoragePath);
         if (!object) throw new Error("File not found in R2");
         const arrayBuffer = await object.arrayBuffer();
-        
+        // Cópia dos bytes ANTES do extractText: o pdf.js (unpdf) detacha o
+        // ArrayBuffer original, o que quebraria a extração de imagens do OCR.
+        const ocrPdfBytes = arrayBuffer.slice(0);
+
         const pdfData = new Uint8Array(arrayBuffer);
         const { extractText } = await import('unpdf');
         const textData = await extractText(pdfData);
-        const pdfTextStr = Array.isArray(textData.text) ? textData.text.join('\n') : String(textData.text);
-        
-        // Documento digitalizado/manuscrito sem texto legível: não alimenta o
-        // extrator nem a IA (gerariam códigos estranhos ou alucinações). Cataloga
-        // com um registro-nota apontando para o PDF original.
+        let pdfTextStr = Array.isArray(textData.text) ? textData.text.join('\n') : String(textData.text);
+
+        // Documento digitalizado/manuscrito: a camada de texto veio ilegível.
+        // Extrai as imagens JPEG embutidas e OCR-a via AI.toMarkdown (que lê
+        // imagens com modelo de visão no próprio Worker). Se o OCR vier
+        // legível, segue o pipeline normal de extração com esse texto.
+        if (looksGarbled(pdfTextStr)) {
+          try {
+            const images = await extractJpegImagesFromPdf(ocrPdfBytes);
+            if (images.length > 0) {
+              const docs = images.map((img, i) => ({
+                name: `pagina-${i + 1}.jpg`,
+                blob: new Blob([img], { type: 'image/jpeg' }),
+              }));
+              const md = await env.AI.toMarkdown(docs);
+              const ocrText = Array.isArray(md) ? md.map((m: any) => String(m?.data || '')).join('\n\n') : '';
+              if (ocrText && !looksGarbled(ocrText)) {
+                pdfTextStr = ocrText;
+                console.log(`OCR recuperou ${ocrText.length} chars de ${images.length} imagem(ns) em ${fileName}`);
+              }
+            }
+          } catch (ocrErr) {
+            console.warn('OCR via toMarkdown falhou', ocrErr);
+          }
+        }
+
+        // Ainda ilegível mesmo após OCR: não alimenta o extrator nem a IA
+        // (gerariam códigos estranhos ou alucinações). Cataloga com um
+        // registro-nota apontando para o PDF original.
         if (looksGarbled(pdfTextStr)) {
           const note = {
             dataExame: parseBrazilianDateFromText(pdfTextStr, fileName),
