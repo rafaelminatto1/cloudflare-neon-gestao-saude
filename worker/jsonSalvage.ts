@@ -1,7 +1,8 @@
 // Resgata do texto de uma resposta de IA (possivelmente truncada por max_tokens)
 // os objetos do array "exames"/"exams" que fecharam corretamente.
 export function salvageExamsFromTruncatedJson(text: string): any[] {
-  const keyMatch = text.match(/"(?:exames|exams)"\s*:\s*\[/);
+  // Lookbehind evita casar com a chave escapada dentro de uma string (ex: \"exames\": [)
+  const keyMatch = text.match(/(?<!\\)"(?:exames|exams)"\s*:\s*\[/);
   if (!keyMatch || keyMatch.index === undefined) return [];
 
   const start = keyMatch.index + keyMatch[0].length;

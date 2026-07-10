@@ -55,4 +55,26 @@ import { salvageExamsFromTruncatedJson } from './jsonSalvage.ts';
   assert.equal(out[0].nomeExame, 'PCR');
 }
 
+
+// 8. Array vazio — retorna vazio sem erro
+{
+  assert.deepEqual(salvageExamsFromTruncatedJson('{"exames": []}'), []);
+}
+
+// 9. Chave "exams" (inglês) combinada com truncagem
+{
+  const text = '{"exams": [{"nomeExame": "Glicose", "resultado": "92"}, {"nomeExame": "cortad';
+  const out = salvageExamsFromTruncatedJson(text);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].nomeExame, 'Glicose');
+}
+
+// 10. Chave "exames" escapada dentro de uma string antes do array real — ignora a falsa
+{
+  const text = '{"nota": "o campo \\"exames\\": [] deve ser array", "exames": [{"nomeExame": "TSH", "resultado": "2,5"}]}';
+  const out = salvageExamsFromTruncatedJson(text);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].nomeExame, 'TSH');
+}
+
 console.log('jsonSalvage: todos os testes passaram');

@@ -1092,7 +1092,12 @@ const parseExamsFromAiResponse = (raw: unknown): { exams: any[]; ok: boolean } =
     }
   }
   const arr = parsedJson?.exams ?? parsedJson?.exames;
-  return { exams: Array.isArray(arr) ? arr : [], ok: true };
+  if (!Array.isArray(arr)) {
+    // Resposta parseou mas não tem o array esperado: sinaliza possível desvio de schema do modelo
+    console.warn("Resposta da IA sem array 'exames'/'exams'; chaves recebidas:", parsedJson && typeof parsedJson === 'object' ? Object.keys(parsedJson).join(', ') : typeof parsedJson);
+    return { exams: [], ok: true };
+  }
+  return { exams: arr, ok: true };
 };
 
 export default {
