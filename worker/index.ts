@@ -6,6 +6,7 @@ import postgres from 'postgres';
 import * as schema from '../src/db/schema.js';
 import { and, eq, inArray } from 'drizzle-orm';
 import { salvageExamsFromTruncatedJson } from './jsonSalvage.js';
+import { normalizeResultForKey } from './resultKey.js';
 
 type Bindings = {
   DATABASE_URL: string;
@@ -238,7 +239,7 @@ const dedupeExtractedExams = (exams: any[]) => {
     const key = [
       normalizeForKey(exam.nomeExame),
       normalizeForKey(exam.dataExame),
-      normalizeForKey(exam.resultado),
+      normalizeResultForKey(exam.resultado),
       normalizeForKey(exam.unidade)
     ].join('|');
 
