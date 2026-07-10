@@ -5664,53 +5664,55 @@ Tem certeza que deseja ZERAR todos os dados de exames para subi-los novamente?`)
     };
 
     const searchClean = normalize(searchTerm);
-    if (!searchClean) return processedExams;
+    let result = processedExams;
 
-    const searchTerms = searchClean.split(' ').filter(term => term.length > 1);
-    if (searchTerms.length === 0) return processedExams;
+    if (searchClean) {
+      const searchTerms = searchClean.split(' ').filter(term => term.length > 1);
+      if (searchTerms.length > 0) {
+        result = result.filter(exam => {
+          return searchTerms.every(term => {
+            // 1. Basic fields check (including observations/notes and interpretation)
+            const matchesBasic = 
+              normalize(exam.nomeExame).includes(term) ||
+              normalize(exam.medicoSolicitante).includes(term) ||
+              normalize(exam.resultado).includes(term) ||
+              normalize(exam.interpretacao).includes(term) ||
+              normalize(exam.especialidadeMedica || '').includes(term) ||
+              normalize(exam.grupoSistemico || '').includes(term) ||
+              normalize(exam.tags || '').includes(term) ||
+              normalize(exam.observacoes || '').includes(term);
 
-    let result = processedExams.filter(exam => {
-      return searchTerms.every(term => {
-        // 1. Basic fields check (including observations/notes and interpretation)
-        const matchesBasic = 
-          normalize(exam.nomeExame).includes(term) ||
-          normalize(exam.medicoSolicitante).includes(term) ||
-          normalize(exam.resultado).includes(term) ||
-          normalize(exam.interpretacao).includes(term) ||
-          normalize(exam.especialidadeMedica || '').includes(term) ||
-          normalize(exam.grupoSistemico || '').includes(term) ||
-          normalize(exam.tags || '').includes(term) ||
-          normalize(exam.observacoes || '').includes(term);
+            if (matchesBasic) return true;
 
-        if (matchesBasic) return true;
+            // 2. Advanced Glossary/Alias check
+            const normExamName = normalize(exam.nomeExame);
+            
+            for (const item of EXAM_GLOSSARY) {
+              // Determine if this exam is related to this glossary item
+              const isRelated = 
+                normExamName.includes(normalize(item.canonicalName)) ||
+                item.aliases.some(alias => {
+                  const normAlias = normalize(alias);
+                  return normAlias.length > 2 && normExamName.includes(normAlias);
+                });
 
-        // 2. Advanced Glossary/Alias check
-        const normExamName = normalize(exam.nomeExame);
-        
-        for (const item of EXAM_GLOSSARY) {
-          // Determine if this exam is related to this glossary item
-          const isRelated = 
-            normExamName.includes(normalize(item.canonicalName)) ||
-            item.aliases.some(alias => {
-              const normAlias = normalize(alias);
-              return normAlias.length > 2 && normExamName.includes(normAlias);
-            });
+              if (isRelated) {
+                // Check if the search term matches any metadata of the glossary item (name, aliases, description, category)
+                const matchesGlossary = 
+                  normalize(item.canonicalName).includes(term) ||
+                  item.aliases.some(alias => normalize(alias).includes(term)) ||
+                  normalize(item.description).includes(term) ||
+                  normalize(item.category).includes(term);
 
-          if (isRelated) {
-            // Check if the search term matches any metadata of the glossary item (name, aliases, description, category)
-            const matchesGlossary = 
-              normalize(item.canonicalName).includes(term) ||
-              item.aliases.some(alias => normalize(alias).includes(term)) ||
-              normalize(item.description).includes(term) ||
-              normalize(item.category).includes(term);
+                if (matchesGlossary) return true;
+              }
+            }
 
-            if (matchesGlossary) return true;
-          }
-        }
-
-        return false;
-      });
-    });
+            return false;
+          });
+        });
+      }
+    }
 
     if (groupFilter) {
       result = result.filter(exam => getExamGroup(exam.nomeExame) === groupFilter);
@@ -5761,7 +5763,7 @@ Tem certeza que deseja ZERAR todos os dados de exames para subi-los novamente?`)
       });
     }
     return result;
-  }, [searchTerm, startDate, endDate, categoryFilter, interpFilter, specialtyFilter, systemFilter, sortConfig, processedExams]);
+  }, [searchTerm, startDate, endDate, categoryFilter, interpFilter, specialtyFilter, systemFilter, sortConfig, groupFilter, processedExams]);
 
   const groupedExams = useMemo(() => {
     if (!isGroupedView) return filteredExams;
