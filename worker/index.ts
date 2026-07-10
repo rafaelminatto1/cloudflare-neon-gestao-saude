@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '../src/db/schema.js';
 import { and, eq, inArray } from 'drizzle-orm';
+import { salvageExamsFromTruncatedJson } from './jsonSalvage.js';
 
 type Bindings = {
   DATABASE_URL: string;
@@ -380,8 +381,8 @@ app.post('/api/rag-chat', async (c) => {
            gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
          }) as AsyncGenerator<any>;
        } catch (e) {
-         console.warn("LLaMA 70b failed for chat, trying 8b fallback", e);
-         aiResponse = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages, max_tokens: 4096, stream: true }, {
+         console.warn("LLaMA 70b failed for chat, trying 3b fallback", e);
+         aiResponse = await c.env.AI.run('@cf/meta/llama-3.2-3b-instruct', { messages, max_tokens: 4096, stream: true }, {
            gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
          }) as AsyncGenerator<any>;
        }
@@ -397,6 +398,329 @@ app.post('/api/rag-chat', async (c) => {
   }
 });
 
+// Global Chat / Insights Endpoint
+app.post('/api/chat-global', async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}));
+    const queryText = body.userMessage || body.message || '';
+    const history = body.history || [];
+    const contextData = body.contextData || {};
+    
+    // 1. Vectorize the question
+    let contextStr = "Nenhum histórico médico específico foi encontrado.";
+    if (queryText) {
+      try {
+        const embeddingResponse = await c.env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [queryText] });
+        const vector = embeddingResponse.data[0];
+
+        // 2. Query Vectorize
+        const matches = await c.env.VECTOR_INDEX.query(vector, { topK: 3 });
+        
+        // Fetch text from KV
+        let retrievedTexts: string[] = [];
+        for (const match of matches.matches) {
+           const text = await c.env.GESTAO_SAUDE_KV.get(`doc:${match.id}`);
+           if (text) retrievedTexts.push(`[Documento: ${match.id}]\n${text}`);
+        }
+        if (retrievedTexts.length > 0) {
+          contextStr = retrievedTexts.join('\n\n');
+        }
+      } catch (embErr) {
+        console.warn("Embedding or Vectorize query failed inside chat-global", embErr);
+      }
+    }
+
+    // Prepare additional context from pathologies and medications
+    let clientContext = "";
+    if (contextData.pathologies && Array.isArray(contextData.pathologies) && contextData.pathologies.length > 0) {
+      clientContext += "\nPatologias / Condições diagnosticadas:\n" + contextData.pathologies.map((p: any) => `- ${p.condition} (Status: ${p.status}, Detecção: ${p.dateDetected})`).join('\n');
+    }
+    if (contextData.medications && Array.isArray(contextData.medications) && contextData.medications.length > 0) {
+      clientContext += "\nMedicamentos Contínuos:\n" + contextData.medications.map((m: any) => `- ${m.name} (Dosagem: ${m.dosage}, Frequência: ${m.frequency})`).join('\n');
+    }
+    if (contextData.comparativeData && Array.isArray(contextData.comparativeData) && contextData.comparativeData.length > 0) {
+      clientContext += "\nBiomarcadores Recentes:\n" + contextData.comparativeData.map((d: any) => `- ${d.testName}: Último valor ${d.lastValue} ${d.unit} (Ref: ${d.refRange || '—'})`).join('\n');
+    }
+
+    const messages = [
+      { 
+        role: 'system', 
+        content: `Você é um assistente médico integrativo e especialista em interpretar exames de laboratório e exames de imagem em português do Brasil.
+Você deve responder em formato JSON estrito contendo duas chaves:
+1. "answer": Sua análise detalhada, amigável, técnica e baseada em evidências científicas. Use formatação Markdown rica (negritos, listas, tabelas se necessário).
+2. "suggestedFollowUps": Um array de 2 a 3 perguntas de acompanhamento curtas e lógicas que o paciente pode clicar para fazer em seguida.
+
+Regras importantes:
+- Nunca prescreva tratamentos ou dê diagnósticos definitivos. Forneça insights integrativos, explique mecanismos fisiológicos e sugira perguntas para o médico do paciente.
+- Se houver medicamentos ou patologias informadas no contexto, correlacione-os se fizer sentido clínico.
+- Retorne APENAS o JSON válido. Não inclua blocos de código com a marcação \`\`\`json ou qualquer texto adicional fora do JSON.` 
+      }
+    ];
+
+    // Add history messages
+    for (const h of history) {
+      messages.push({
+        role: h.sender === 'user' ? 'user' : 'assistant',
+        content: h.text
+      });
+    }
+
+    // Add user query with context
+    messages.push({
+      role: 'user',
+      content: `Contexto do paciente:${clientContext}\n\nContexto dos exames extraídos:\n${contextStr}\n\nPergunta: ${queryText}`
+    });
+
+    let rawAiResponse = "";
+    try {
+      const aiResponse: any = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
+        gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+      });
+      rawAiResponse = aiResponse.response || "";
+    } catch (e) {
+      console.warn("LLaMA 70b failed for chat-global, trying 3b fallback", e);
+      try {
+        const aiResponse: any = await c.env.AI.run('@cf/meta/llama-3.2-3b-instruct', { messages, max_tokens: 4096 }, {
+          gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+        });
+        rawAiResponse = aiResponse.response || "";
+      } catch (fallbackErr: any) {
+        console.error("3b fallback failed too", fallbackErr);
+        return c.json({ error: fallbackErr.message }, 500);
+      }
+    }
+
+    // Parse JSON safely
+    let parsed: any = {};
+    try {
+      const match = rawAiResponse.match(/\{[\s\S]*\}/);
+      if (match) {
+        parsed = JSON.parse(match[0]);
+      } else {
+        parsed = JSON.parse(rawAiResponse);
+      }
+    } catch (parseErr) {
+      console.warn("Failed to parse JSON response from LLM, using fallback structure", parseErr);
+      parsed = {
+        answer: rawAiResponse,
+        suggestedFollowUps: [
+          "O que significa essa alteração?",
+          "Quais exames complementares devo fazer?",
+          "Como melhorar este biomarcador com estilo de vida?"
+        ]
+      };
+    }
+
+    return c.json({
+      answer: parsed.answer || rawAiResponse,
+      suggestedFollowUps: parsed.suggestedFollowUps || []
+    });
+
+  } catch (err: any) {
+    console.error("Error in chat-global endpoint:", err);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// Generate Health Executive Summary Endpoint
+app.post('/api/generate-health-executive-summary', async (c) => {
+  try {
+    const { processedExams = [], userPathologies = [], medications = [] } = await c.req.json().catch(() => ({}));
+
+    // Compile patient details for the prompt
+    let profileDetails = "";
+    if (userPathologies.length > 0) {
+      profileDetails += "\nPatologias diagnosticadas:\n" + userPathologies.map((p: any) => `- ${p.condition} (Status: ${p.status}, Detecção: ${p.dateDetected})`).join('\n');
+    }
+    if (medications.length > 0) {
+      profileDetails += "\nMedicamentos em uso:\n" + medications.map((m: any) => `- ${m.name} (Dosagem: ${m.dosage}, Frequência: ${m.frequency})`).join('\n');
+    }
+    
+    // Sort and limit exams to fit inside token context
+    const sortedExams = [...processedExams].sort((a: any, b: any) => {
+      const dateA = String(a.dataExame || '').split('/').reverse().join('');
+      const dateB = String(b.dataExame || '').split('/').reverse().join('');
+      return dateB.localeCompare(dateA); // newest first
+    });
+    
+    // Get distinct list of latest exams
+    const seenExams = new Set<string>();
+    const latestDistinctExams = sortedExams.filter((e: any) => {
+      const key = `${e.nomeExame.trim().toUpperCase()}`;
+      if (seenExams.has(key)) return false;
+      seenExams.add(key);
+      return true;
+    }).slice(0, 30); // top 30 distinct exams
+
+    let examsDetails = "\nÚltimos resultados de exames de laboratório/imagem:\n" + 
+      latestDistinctExams.map((e: any) => `- ${e.nomeExame}: ${e.resultado} ${e.unidade || ''} (Ref: ${e.valorReferencia || '—'}, Data: ${e.dataExame}, Interp: ${e.interpretacao})`).join('\n');
+
+    const messages = [
+      {
+        role: 'system',
+        content: `Você é um médico auditor e especialista em inteligência clínica integrativa.
+Sua tarefa é analisar os dados do paciente (patologias, medicamentos e exames recentes) e gerar um "Resumo Executivo Semestral" em português do Brasil, estruturado de forma profissional para que o paciente exiba ao seu médico durante uma consulta.
+
+Estruture sua resposta usando os seguintes tópicos em Markdown:
+1. **Parecer Geral e Síntese de Saúde**: Breve resumo do quadro clínico.
+2. **Correlações Integrativas**: Como as patologias relatadas, os medicamentos ativos e os biomarcadores alterados ou limítrofes se cruzam. Explique os mecanismos de sobreposição (ex: carga hepática, regulação imunológica, desequilíbrio eletrolítico).
+3. **Recomendações Clínicas e Próximos Passos**: Monitoramento de exames e perguntas preventivas.
+
+Diretrizes:
+- Escreva de forma objetiva, científica, técnica e ao mesmo tempo clara para o paciente.
+- Não prescreva medicamentos ou tratamentos específicos. Foque em insights e pontos de monitoramento fisiológico.
+- Retorne apenas o texto formatado em markdown.`
+      },
+      {
+        role: 'user',
+        content: `Dados do paciente:\n${profileDetails}\n${examsDetails}`
+      }
+    ];
+
+    let summaryText = "";
+    try {
+      const aiResponse: any = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
+        gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+      });
+      summaryText = aiResponse.response || "";
+    } catch (e) {
+      console.warn("LLaMA 70b failed for summary, trying 3b", e);
+      try {
+        const aiResponse: any = await c.env.AI.run('@cf/meta/llama-3.2-3b-instruct', { messages, max_tokens: 4096 }, {
+          gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+        });
+        summaryText = aiResponse.response || "";
+      } catch (e2: any) {
+        return c.json({ error: e2.message }, 500);
+      }
+    }
+
+    return c.json({ result: summaryText });
+  } catch (err: any) {
+    console.error("Error in executive summary endpoint:", err);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// Generate Consultation Questions Endpoint
+app.post('/api/generate-consultation-questions', async (c) => {
+  try {
+    const { processedExams = [], userPathologies = [], medications = [] } = await c.req.json().catch(() => ({}));
+
+    let profileDetails = "";
+    if (userPathologies.length > 0) {
+      profileDetails += "\nPatologias:\n" + userPathologies.map((p: any) => `- ${p.condition}`).join('\n');
+    }
+    if (medications.length > 0) {
+      profileDetails += "\nMedicamentos:\n" + medications.map((m: any) => `- ${m.name}`).join('\n');
+    }
+    
+    // Sort and get altered/borderline exams
+    const sortedExams = [...processedExams].sort((a: any, b: any) => {
+      const dateA = String(a.dataExame || '').split('/').reverse().join('');
+      const dateB = String(b.dataExame || '').split('/').reverse().join('');
+      return dateB.localeCompare(dateA);
+    });
+
+    const alteredExams = sortedExams.filter((e: any) => e.interpretacao === 'Alterado' || e.interpretacao === 'Sub-ópt.').slice(0, 10);
+    const normalExams = sortedExams.filter((e: any) => e.interpretacao === 'Normal').slice(0, 10);
+
+    let examsDetails = "";
+    if (alteredExams.length > 0) {
+      examsDetails += "\nExames Alterados/Sub-ótimos:\n" + alteredExams.map((e: any) => `- ${e.nomeExame}: ${e.resultado} ${e.unidade || ''} (Ref: ${e.valorReferencia})`).join('\n');
+    }
+    if (normalExams.length > 0) {
+      examsDetails += "\nExames Normais Recentes:\n" + normalExams.map((e: any) => `- ${e.nomeExame}: ${e.resultado} ${e.unidade || ''}`).join('\n');
+    }
+
+    const messages = [
+      {
+        role: 'system',
+        content: `Você é um assistente médico integrativo.
+Sua tarefa é analisar os dados do paciente e formular de 3 a 5 perguntas de discussão médica altamente personalizadas e clinicamente relevantes para o paciente fazer ao seu médico na consulta.
+
+Você deve responder APENAS com um JSON contendo uma chave "questions", que é uma lista de objetos no seguinte formato estrito:
+[
+  {
+    "id": 1,
+    "title": "Título curto da correlação (ex: Otimização de Micronutrientes ou Função Hepática)",
+    "question": "Pergunta direta e polida que o paciente fará ao médico.",
+    "context": "Contexto clínico ou explicação de apoio ao diálogo para o paciente saber o porquê de fazer essa pergunta."
+  }
+]
+
+Regras de conteúdo:
+- As perguntas devem ser baseadas nos exames alterados/sub-ótimos, patologias e medicamentos descritos.
+- Seja estritamente técnico e focado na prática integrativa e preventiva de saúde.
+- Retorne apenas o JSON puro, sem blocos de código com a marcação \`\`\`json ou texto adicional.`
+      },
+      {
+        role: 'user',
+        content: `Dados do paciente:\n${profileDetails}\n${examsDetails}`
+      }
+    ];
+
+    let rawResponse = "";
+    try {
+      const aiResponse: any = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 2048 }, {
+        gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+      });
+      rawResponse = aiResponse.response || "";
+    } catch (e) {
+      console.warn("LLaMA 70b failed for questions, trying 3b", e);
+      try {
+        const aiResponse: any = await c.env.AI.run('@cf/meta/llama-3.2-3b-instruct', { messages, max_tokens: 2048 }, {
+          gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+        });
+        rawResponse = aiResponse.response || "";
+      } catch (e2: any) {
+        return c.json({ error: e2.message }, 500);
+      }
+    }
+
+    let parsedQuestions: any[] = [];
+    try {
+      const objectMatch = rawResponse.match(/\{[\s\S]*\}/);
+      const arrayMatch = rawResponse.match(/\[[\s\S]*\]/);
+      
+      const objIndex = objectMatch && typeof objectMatch.index !== 'undefined' ? objectMatch.index : -1;
+      const arrIndex = arrayMatch && typeof arrayMatch.index !== 'undefined' ? arrayMatch.index : -1;
+      
+      if (objectMatch && (!arrayMatch || objIndex < arrIndex)) {
+        const parsed = JSON.parse(objectMatch[0]);
+        parsedQuestions = parsed.questions || parsed.exames || parsed;
+      } else if (arrayMatch) {
+        parsedQuestions = JSON.parse(arrayMatch[0]);
+      } else {
+        parsedQuestions = JSON.parse(rawResponse);
+      }
+      
+      if (!Array.isArray(parsedQuestions)) {
+        if (typeof parsedQuestions === 'object' && parsedQuestions !== null) {
+          const obj = parsedQuestions as any;
+          parsedQuestions = obj.questions || obj.exames || [obj];
+        } else {
+          parsedQuestions = [];
+        }
+      }
+    } catch (parseErr) {
+      console.warn("Failed to parse JSON for consultation questions:", parseErr, rawResponse);
+      parsedQuestions = [
+        {
+          id: 1,
+          title: 'Correlação dos Marcadores Alterados',
+          question: 'Doutor, reparei que alguns marcadores estão fora das faixas ideais. Como podemos correlacionar esses desvios com meus sintomas atuais?',
+          context: 'Importante para traçar um panorama geral de bem-estar.'
+        }
+      ];
+    }
+
+    return c.json({ questions: parsedQuestions });
+  } catch (err: any) {
+    console.error("Error generating consultation questions:", err);
+    return c.json({ error: err.message }, 500);
+  }
+});
 
 // --- CRUD Endpoints ---
 const getDb = (c: any) => {
@@ -576,7 +900,7 @@ Retorne APENAS um JSON estrito no formato: {"name": "Nome Oficial", "crm": "1234
 Seja extremamente preciso. Caso não encontre, infira a provável especialidade. Sem markdown, apenas o JSON.`;
 
     const messages = [{ role: 'user', content: prompt }];
-    const aiResponse = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages, max_tokens: 500 });
+    const aiResponse = await c.env.AI.run('@cf/meta/llama-3.2-3b-instruct', { messages, max_tokens: 500 });
     const rawAiResponse = (aiResponse as { response: string }).response;
 
     let parsed = { name: doctorName, crm: crm, uf: uf, specialty: 'Clínico Geral' };
@@ -719,6 +1043,58 @@ app.get('/api/all-data/:userId', async (c) => {
   } catch (err: any) { return c.json({ error: err.message }, 500); }
 });
 
+const buildExtractionMessages = (fileName: string, chunkText: string, partLabel: string) => [
+  { role: 'system', content: 'Você é um assistente médico especializado na leitura de laudos e exames. Retorne APENAS um JSON estruturado, sem blocos de markdown e sem texto adicional.' },
+  { role: 'user', content: `Extraia as informações do exame abaixo e retorne APENAS um JSON válido contendo um array 'exames'. Não use outros arrays como 'avaliacoes'.
+ATENÇÃO 1: Para perfis lipídicos, diferencie claramente 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Colesterol VLDL' e 'Colesterol Não-HDL' no campo 'nomeExame'. NUNCA chame as frações apenas de 'Colesterol Total'.
+ATENÇÃO 2: Para Bilirrubinas, diferencie 'Bilirrubina Total', 'Bilirrubina Direta' e 'Bilirrubina Indireta'.
+ATENÇÃO 3: Para Proteínas, diferencie 'Proteínas Totais', 'Albumina' e 'Globulina'.
+ATENÇÃO 4: Para marcadores Autoimunes e de Tireoide, seja estrito e não os agrupe. Diferencie 'c-ANCA' de 'p-ANCA', 'Anti-TPO' de 'Anti-Tireoglobulina'.
+ATENÇÃO 5: NÃO extraia as tabelas de referência como se fossem resultados de exames do paciente. Ignore linhas de legendas ou tabelas de referência, como 'Reagente: Superior a...', 'Não Reagente:', ou 'Inconclusivo:'. O resultado do paciente é apenas o valor principal que aparece antes da tabela.
+ATENÇÃO 6: Ignore seções de 'Notas', 'Observações' ou explicações teóricas que costumam aparecer após os resultados (ex: 'Como indicador de risco cardiovascular...'). Não extraia isso como novos exames.
+ATENÇÃO 7: Para exames descritivos longos (ex: anatomopatológico, biópsias, ecocardiograma, ultrassom, raio-x, tomografia, ressonância), extraia a 'Conclusão' ou 'Diagnóstico' como sendo o 'resultado'. Se não houver uma conclusão explícita, faça um breve resumo dos achados mais importantes no campo 'resultado'.
+ATENÇÃO 8: Para o campo 'medicoSolicitante', se houver um CRM (registro de médico) ou UF visível próximo ao nome do médico solicitante no texto, extraia-o junto no formato: 'Nome do Médico - CRM: 123456/UF' ou 'Nome do Médico - CRM 123456'. Exemplo: se encontrar 'Dr.(a): 174993 - FELIPE ARAGAO DA SILVA', retorne 'FELIPE ARAGAO DA SILVA - CRM 174993'.
+ATENÇÃO 9: Se encontrar o nome do Médico Responsável Técnico ou Médico Executante/Assinante do exame, anexe-o ao final do campo 'interpretacao' no formato: '\\n(Realizado/Assinado por: Nome do Médico - CRM 123456)'.
+Formato OBRIGATÓRIO do array exames: [{ dataExame: string, categoria: string (USE APENAS: Autoimunidade, Coração, Eletrólitos, Exames de Imagem, Fígado, Gastroenterologia, Hormônios, Infectologia, Marcadores Celulares Integrados, Metabolismo, Nutrientes, Pâncreas, Rins, Sangue, Saúde Feminina, Saúde Masculina, Tireoide, Toxicologia), nomeExame: string, resultado: string, unidade: string, valorReferencia: string, interpretacao: string, medicoSolicitante: string, arquivoOrigem: string, especialidadeMedica: string, grupoSistemico: string, tags: string, impactoAutoimune: string }].\n\nArquivo Origem Nome: ${fileName}\nParte do Texto do PDF (${partLabel}):\n${chunkText}` }
+];
+
+// Chama o modelo de extração com fallback. Retorna o campo `response` bruto
+// (pode ser string OU objeto JSON, dependendo do modelo). Lança se ambos falharem.
+async function runExtractionAi(env: Bindings, messages: any[]): Promise<unknown> {
+  let aiResponse: any;
+  try {
+    aiResponse = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 8192 }, {
+      gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+    });
+  } catch (e) {
+    console.warn("LLaMA 70b failed for chunk, trying 3b fallback", e);
+    aiResponse = await env.AI.run('@cf/meta/llama-3.2-3b-instruct', { messages, max_tokens: 4096 }, {
+      gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
+    });
+  }
+  return aiResponse?.response;
+}
+
+// Interpreta a resposta da IA. ok=false indica JSON truncado/malformado
+// (exams contém o que foi possível resgatar do texto truncado).
+const parseExamsFromAiResponse = (raw: unknown): { exams: any[]; ok: boolean } => {
+  let parsedJson: any = null;
+  if (raw && typeof raw === 'object') {
+    parsedJson = raw;
+  } else {
+    const responseText = String(raw ?? '');
+    try {
+      const match = responseText.match(/\{[\s\S]*\}/);
+      parsedJson = JSON.parse(match ? match[0] : responseText);
+    } catch (e) {
+      console.error("Failed to parse JSON for chunk:", e);
+      return { exams: salvageExamsFromTruncatedJson(responseText), ok: false };
+    }
+  }
+  const arr = parsedJson?.exams ?? parsedJson?.exames;
+  return { exams: Array.isArray(arr) ? arr : [], ok: true };
+};
+
 export default {
   fetch: app.fetch,
   async queue(batch: any, env: Bindings) {
@@ -767,59 +1143,42 @@ export default {
 
         for (let i = 0; i < pdfTextStr.length; i += chunkSize) {
           const chunkText = pdfTextStr.substring(i, i + chunkSize);
-          const messages = [
-            { role: 'system', content: 'Você é um assistente médico especializado na leitura de laudos e exames. Retorne APENAS um JSON estruturado, sem blocos de markdown e sem texto adicional.' },
-            { role: 'user', content: `Extraia as informações do exame abaixo e retorne APENAS um JSON válido contendo um array 'exames'. Não use outros arrays como 'avaliacoes'.
-ATENÇÃO 1: Para perfis lipídicos, diferencie claramente 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Colesterol VLDL' e 'Colesterol Não-HDL' no campo 'nomeExame'. NUNCA chame as frações apenas de 'Colesterol Total'.
-ATENÇÃO 2: Para Bilirrubinas, diferencie 'Bilirrubina Total', 'Bilirrubina Direta' e 'Bilirrubina Indireta'.
-ATENÇÃO 3: Para Proteínas, diferencie 'Proteínas Totais', 'Albumina' e 'Globulina'.
-ATENÇÃO 4: Para marcadores Autoimunes e de Tireoide, seja estrito e não os agrupe. Diferencie 'c-ANCA' de 'p-ANCA', 'Anti-TPO' de 'Anti-Tireoglobulina'.
-ATENÇÃO 5: NÃO extraia as tabelas de referência como se fossem resultados de exames do paciente. Ignore linhas de legendas ou tabelas de referência, como 'Reagente: Superior a...', 'Não Reagente:', ou 'Inconclusivo:'. O resultado do paciente é apenas o valor principal que aparece antes da tabela.
-ATENÇÃO 6: Ignore seções de 'Notas', 'Observações' ou explicações teóricas que costumam aparecer após os resultados (ex: 'Como indicador de risco cardiovascular...'). Não extraia isso como novos exames.
-ATENÇÃO 7: Para exames descritivos longos (ex: anatomopatológico, biópsias, ecocardiograma, ultrassom, raio-x, tomografia, ressonância), extraia a 'Conclusão' ou 'Diagnóstico' como sendo o 'resultado'. Se não houver uma conclusão explícita, faça um breve resumo dos achados mais importantes no campo 'resultado'.
-ATENÇÃO 8: Para o campo 'medicoSolicitante', se houver um CRM (registro de médico) ou UF visível próximo ao nome do médico solicitante no texto, extraia-o junto no formato: 'Nome do Médico - CRM: 123456/UF' ou 'Nome do Médico - CRM 123456'. Exemplo: se encontrar 'Dr.(a): 174993 - FELIPE ARAGAO DA SILVA', retorne 'FELIPE ARAGAO DA SILVA - CRM 174993'.
-Formato OBRIGATÓRIO do array exames: [{ dataExame: string, categoria: string (USE APENAS: Autoimunidade, Coração, Eletrólitos, Exames de Imagem, Fígado, Gastroenterologia, Hormônios, Infectologia, Marcadores Celulares Integrados, Metabolismo, Nutrientes, Pâncreas, Rins, Sangue, Saúde Feminina, Saúde Masculina, Tireoide, Toxicologia), nomeExame: string, resultado: string, unidade: string, valorReferencia: string, interpretacao: string, medicoSolicitante: string, arquivoOrigem: string, especialidadeMedica: string, grupoSistemico: string, tags: string, impactoAutoimune: string }].\n\nArquivo Origem Nome: ${fileName}\nParte do Texto do PDF (${Math.floor(i/chunkSize) + 1}):\n${chunkText}` }
-          ];
+          const chunkLabel = String(Math.floor(i / chunkSize) + 1);
 
-          let aiResponse;
+          let rawResponse: unknown;
           try {
-            aiResponse = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages, max_tokens: 4096 }, {
-              gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
-            });
-          } catch (e) {
-            console.warn("LLaMA 70b failed for chunk, trying 8b fallback", e);
-            try {
-              aiResponse = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages, max_tokens: 4096 }, {
-                gateway: { id: "gestao-saude-gateway", skipCache: false, cacheTtl: 86400 * 30 }
-              });
-            } catch (e2: any) {
-              console.error("8b fallback also failed for chunk", e2);
-              hasError = true;
-              lastError = e2.message;
-              continue;
-            }
+            rawResponse = await runExtractionAi(env, buildExtractionMessages(fileName, chunkText, chunkLabel));
+          } catch (e2: any) {
+            console.error("3b fallback also failed for chunk", e2);
+            hasError = true;
+            lastError = e2.message;
+            continue;
           }
-          
-          if (!aiResponse) continue;
-          
-          const rawAiResponse = (aiResponse as { response: string }).response;
-          
-          let parsedJson: any = { exams: [] };
-          try {
-            const match = rawAiResponse.match(/\{[\s\S]*\}/);
-            if (match) {
-              parsedJson = JSON.parse(match[0]);
-            } else {
-              parsedJson = JSON.parse(rawAiResponse);
+
+          const parsed = parseExamsFromAiResponse(rawResponse);
+          allExams = allExams.concat(parsed.exams.map((ex: any) => ({ ...ex, pdfStoragePath })));
+
+          if (!parsed.ok) {
+            // Resposta truncada: o que era recuperável já foi salvo acima.
+            // Reprocessa o chunk em duas metades (prompt diferente escapa do cache do gateway).
+            console.warn(`Resposta truncada no chunk ${chunkLabel}: ${parsed.exams.length} exame(s) recuperado(s); reprocessando em metades`);
+            let chunkTotal = parsed.exams.length;
+            const half = Math.ceil(chunkText.length / 2);
+            const parts = [chunkText.substring(0, half), chunkText.substring(half)];
+            for (let p = 0; p < parts.length; p++) {
+              try {
+                const partRaw = await runExtractionAi(env, buildExtractionMessages(fileName, parts[p], `${chunkLabel}.${p + 1}`));
+                const partParsed = parseExamsFromAiResponse(partRaw);
+                allExams = allExams.concat(partParsed.exams.map((ex: any) => ({ ...ex, pdfStoragePath })));
+                chunkTotal += partParsed.exams.length;
+              } catch (e: any) {
+                console.error(`Falha ao reprocessar metade ${p + 1} do chunk ${chunkLabel}`, e);
+              }
             }
-            if (parsedJson.exames && !parsedJson.exams) parsedJson.exams = parsedJson.exames;
-            
-            if (Array.isArray(parsedJson.exams)) {
-              const chunkExams = parsedJson.exams.map((ex: any) => ({ ...ex, pdfStoragePath }));
-              allExams = allExams.concat(chunkExams);
+            if (chunkTotal === 0) {
+              hasError = true;
+              lastError = 'Resposta da IA truncada e nenhum exame pôde ser recuperado';
             }
-          } catch (e) {
-             console.error("Failed to parse JSON for chunk:", e);
           }
         }
         
